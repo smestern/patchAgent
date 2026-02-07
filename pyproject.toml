@@ -50,6 +50,14 @@ dev = [
     "black>=23.0",
     "ruff>=0.1",
 ]
+cli = [
+    "typer[all]>=0.9",
+    "prompt-toolkit>=3.0",
+    "Pillow>=9.0",
+]
+
+[project.scripts]
+patchagent = "patch_agent.cli:app"
 
 [project.urls]
 Homepage = "https://github.com/smestern/patchAgent"

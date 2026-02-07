@@ -10,7 +10,7 @@ ipfx>=1.0
 h5py>=3.0
 
 # Agent framework
-# github-copilot-sdk  # Install from GitHub when available
+github-copilot-sdk  # Install from GitHub when available
 
 # MCP support
 # mcp  # Model Context Protocol

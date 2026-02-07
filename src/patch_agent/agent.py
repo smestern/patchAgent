@@ -69,8 +69,7 @@ class PatchAgent:
 
     def __init__(
         self,
-        model: str = "gpt-4.1",
-        auto_start: bool = True,
+        model: str = "claude-sonnet-4.5",
         log_level: str = "info",
     ):
         """
@@ -82,10 +81,9 @@ class PatchAgent:
             log_level: Logging level for the SDK
         """
         self.model = model
-        self._client = CopilotClient(
-            auto_start=auto_start,
-            log_level=log_level,
-        )
+        self._client = CopilotClient({
+                    "log_level": log_level,
+                })
         self._tools: List[Tool] = []
         self._sessions: Dict[str, Any] = {}
         self._load_tools()
@@ -186,8 +184,8 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "voltage": {"type": "array", "description": "Voltage trace in mV"},
-                        "time": {"type": "array", "description": "Time array in seconds"},
+                        "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+                        "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
                         "dv_cutoff": {"type": "number", "description": "dV/dt threshold in mV/ms (default: 20)"},
                         "min_peak": {"type": "number", "description": "Minimum peak voltage in mV (default: -30)"},
                     },
@@ -201,8 +199,8 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "voltage": {"type": "array", "description": "Voltage trace in mV"},
-                        "time": {"type": "array", "description": "Time array in seconds"},
+                        "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+                        "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
                     },
                     "required": ["voltage", "time"],
                 },
@@ -214,8 +212,8 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "voltage": {"type": "array", "description": "Voltage trace in mV"},
-                        "time": {"type": "array", "description": "Time array in seconds"},
+                        "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+                        "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
                     },
                     "required": ["voltage", "time"],
                 },
@@ -229,9 +227,9 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "voltage": {"type": "array", "description": "Voltage trace in mV"},
-                        "time": {"type": "array", "description": "Time array in seconds"},
-                        "current": {"type": "array", "description": "Current command in pA"},
+                        "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+                        "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
+                        "current": {"type": "array", "items": {"type": "number"}, "description": "Current command in pA"},
                     },
                     "required": ["voltage", "time", "current"],
                 },
@@ -243,8 +241,8 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "voltage": {"type": "array", "description": "Voltage trace in mV"},
-                        "time": {"type": "array", "description": "Time array in seconds"},
+                        "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+                        "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
                     },
                     "required": ["voltage", "time"],
                 },
@@ -256,9 +254,9 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "voltage": {"type": "array", "description": "Voltage trace in mV"},
-                        "time": {"type": "array", "description": "Time array in seconds"},
-                        "current": {"type": "array", "description": "Current command in pA"},
+                        "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+                        "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
+                        "current": {"type": "array", "items": {"type": "number"}, "description": "Current command in pA"},
                     },
                     "required": ["voltage", "time", "current"],
                 },
@@ -270,8 +268,8 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "voltage": {"type": "array", "description": "Voltage trace in mV"},
-                        "time": {"type": "array", "description": "Time array in seconds"},
+                        "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+                        "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
                     },
                     "required": ["voltage", "time"],
                 },
@@ -285,9 +283,9 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "voltage": {"type": "array", "description": "Voltage trace in mV"},
-                        "time": {"type": "array", "description": "Time array in seconds"},
-                        "current": {"type": "array", "description": "Current command in pA"},
+                        "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+                        "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
+                        "current": {"type": "array", "items": {"type": "number"}, "description": "Current command in pA"},
                     },
                     "required": ["voltage", "time"],
                 },
@@ -299,8 +297,8 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "voltage": {"type": "array", "description": "Voltage trace in mV"},
-                        "time": {"type": "array", "description": "Time array in seconds"},
+                        "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+                        "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
                     },
                     "required": ["voltage", "time"],
                 },
@@ -312,7 +310,7 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "voltage": {"type": "array", "description": "Voltage trace in mV"},
+                        "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
                     },
                     "required": ["voltage"],
                 },
@@ -326,8 +324,8 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "y": {"type": "array", "description": "Y values to fit"},
-                        "x": {"type": "array", "description": "X values"},
+                        "y": {"type": "array", "items": {"type": "number"}, "description": "Y values to fit"},
+                        "x": {"type": "array", "items": {"type": "number"}, "description": "X values"},
                     },
                     "required": ["y", "x"],
                 },
@@ -339,8 +337,8 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "currents": {"type": "array", "description": "Current values in pA"},
-                        "voltages": {"type": "array", "description": "Voltage values in mV"},
+                        "currents": {"type": "array", "items": {"type": "number"}, "description": "Current values in pA"},
+                        "voltages": {"type": "array", "items": {"type": "number"}, "description": "Voltage values in mV"},
                     },
                     "required": ["currents", "voltages"],
                 },
@@ -352,8 +350,8 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "currents": {"type": "array", "description": "Current steps in pA"},
-                        "firing_rates": {"type": "array", "description": "Firing rates in Hz"},
+                        "currents": {"type": "array", "items": {"type": "number"}, "description": "Current steps in pA"},
+                        "firing_rates": {"type": "array", "items": {"type": "number"}, "description": "Firing rates in Hz"},
                     },
                     "required": ["currents", "firing_rates"],
                 },
@@ -419,7 +417,7 @@ class PatchAgent:
                 {
                     "type": "object",
                     "properties": {
-                        "data": {"type": "array", "description": "Data array to validate"},
+                        "data": {"type": "array", "items": {"type": "number"}, "description": "Data array to validate"},
                         "name": {"type": "string", "description": "Name for error messages"},
                     },
                     "required": ["data"],
@@ -537,8 +535,7 @@ class PatchAgent:
 
 
 def create_agent(
-    model: str = "gpt-4.1",
-    auto_start: bool = True,
+    model: str = "claude-sonnet-4.5",
     log_level: str = "info",
 ) -> PatchAgent:
     """
@@ -552,4 +549,4 @@ def create_agent(
     Returns:
         Configured PatchAgent instance
     """
-    return PatchAgent(model=model, auto_start=auto_start, log_level=log_level)
+    return PatchAgent(model=model, log_level=log_level)

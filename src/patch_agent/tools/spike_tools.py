@@ -39,7 +39,9 @@ def detect_spikes(
     try:
         from ipfx.spike_detector import detect_putative_spikes, find_peak_indexes
     except ImportError:
-        return _detect_spikes_fallback(voltage, time, dv_cutoff, min_peak)
+        #logging.warning("IPFX not available, using fallback spike detection")
+        print("Warning: IPFX not available, using fallback spike detection")
+        #return _detect_spikes_fallback(voltage, time, dv_cutoff, min_peak)
 
     # Calculate sampling rate
     dt = time[1] - time[0]

@@ -215,6 +215,53 @@ def list_sweeps(
     }
 
 
+def list_ephys_files(
+    directory: Optional[str] = None,
+    recursive: bool = False,
+    file_type: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    List electrophysiology files (.abf, .nwb) in a directory.
+
+    Args:
+        directory: Directory to search. Defaults to the current working directory.
+        recursive: If True, search subdirectories recursively.
+        file_type: Filter by file type: 'abf', 'nwb', or None for both.
+
+    Returns:
+        Dict containing:
+            - directory: The directory that was searched
+            - files: List of dicts with 'name', 'path', and 'type' for each file
+            - total: Total number of files found
+    """
+    target = Path(directory).expanduser().resolve() if directory else Path.cwd()
+
+    if not target.is_dir():
+        raise FileNotFoundError(f"Directory not found: {target}")
+
+    extensions = []
+    if file_type is None or file_type.lower() == "abf":
+        extensions.append("*.abf")
+    if file_type is None or file_type.lower() == "nwb":
+        extensions.append("*.nwb")
+
+    files = []
+    for ext in extensions:
+        pattern = f"**/{ext}" if recursive else ext
+        for p in sorted(target.glob(pattern)):
+            files.append({
+                "name": p.name,
+                "path": str(p),
+                "type": p.suffix.lstrip("."),
+            })
+
+    return {
+        "directory": str(target),
+        "files": files,
+        "total": len(files),
+    }
+
+
 def _infer_clamp_mode(sweep_label_y: str) -> str:
     """Infer clamp mode from sweep label."""
     label_lower = sweep_label_y.lower()

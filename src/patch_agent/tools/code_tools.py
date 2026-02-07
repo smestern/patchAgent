@@ -454,13 +454,26 @@ def execute_code(
             else:
                 result["variables"][name] = str(type(value))
         
-        # Check for matplotlib figures
+        # Check for matplotlib figures and capture as base64 PNGs
         try:
             import matplotlib.pyplot as plt
             if plt.get_fignums():
-                result["figures"] = plt.get_fignums()
-                # Could save figures to base64 here if needed
-        except:
+                import base64
+                figures_data = []
+                for fig_num in plt.get_fignums():
+                    fig = plt.figure(fig_num)
+                    buf = io.BytesIO()
+                    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
+                    buf.seek(0)
+                    figures_data.append({
+                        "figure_number": fig_num,
+                        "image_base64": base64.b64encode(buf.read()).decode("utf-8"),
+                        "format": "png",
+                    })
+                    buf.close()
+                plt.close("all")
+                result["figures"] = figures_data
+        except Exception:
             pass
             
     except Exception as e:

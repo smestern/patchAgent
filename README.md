@@ -41,10 +41,57 @@ patchAgent/
 ## Installation
 
 ```bash
-pip install -e .
+pip install -e ".[cli]"
 ```
 
-## Quick Start
+(Omit `[cli]` if you only need the library without the interactive chat.)
+
+## Quick Start — Interactive Chat
+
+```bash
+# Start a chat session
+patchagent chat
+
+# Pre-load a recording at startup
+patchagent chat --file data/sample_abfs/cell_001.abf
+
+# Use a specific model
+patchagent chat --model claude-sonnet-4
+
+# Save figures to a custom directory (default: temp dir)
+patchagent chat --output-dir ./figures
+
+# Also works via python -m
+python -m patch_agent chat --file cell_001.abf
+```
+
+### Chat Commands
+
+| Command | Description |
+|---------|-------------|
+| `/help` | Show commands and example prompts |
+| `/load <path>` | Load an ABF / NWB file |
+| `/sweeps` | List sweeps in the loaded file |
+| `/save [path]` | Save conversation to markdown |
+| `/clear` | Clear terminal |
+| `/quit` | Exit (also Ctrl-D) |
+
+### Example Session
+
+```
+🧪 You ❯ /load data/sample_abfs/cell_001.abf
+  Loading…
+  Loaded cell_001.abf — 20 sweeps, 20 kHz, current-clamp protocol
+
+🧪 You ❯ Detect spikes in sweep 5
+  Found 12 action potentials.
+  Mean amplitude: 82.3 mV | Mean half-width: 1.1 ms
+
+🧪 You ❯ Plot the voltage trace of sweep 5
+  📊 Saved figure → /tmp/patchagent_.../figure_1.png
+```
+
+## Programmatic Usage
 
 ```python
 import asyncio
@@ -52,7 +99,7 @@ from patch_agent import PatchAgent, create_agent
 
 async def main():
     # Create and start the agent
-    agent = create_agent(model="gpt-4.1")
+    agent = create_agent(model="claude-sonnet-4.5")
     await agent.start()
     
     try:

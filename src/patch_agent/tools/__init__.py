@@ -9,6 +9,7 @@ from .io_tools import (
     get_file_metadata,
     get_sweep_data,
     list_sweeps,
+    list_ephys_files,
 )
 from .spike_tools import (
     detect_spikes,
@@ -61,6 +62,7 @@ def get_all_tools():
         get_file_metadata,
         get_sweep_data,
         list_sweeps,
+        list_ephys_files,
         # Spike tools
         detect_spikes,
         extract_spike_features,
@@ -98,6 +100,7 @@ __all__ = [
     "get_file_metadata",
     "get_sweep_data",
     "list_sweeps",
+    "list_ephys_files",
     # Spike
     "detect_spikes",
     "extract_spike_features",
@@ -128,8 +131,6 @@ __all__ = [
     "check_physiological_bounds",
     "PHYSIOLOGICAL_BOUNDS",
     # Meta
-    "get_all_tools",
-]
     "list_code_snippets",
     # Meta
     "get_all_tools",
