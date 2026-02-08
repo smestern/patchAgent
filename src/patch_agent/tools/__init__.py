@@ -39,6 +39,8 @@ from .code_tools import (
     validate_code,
     get_code_snippet,
     list_code_snippets,
+    set_output_dir,
+    get_output_dir,
     # Scientific rigor functions
     check_scientific_rigor,
     validate_data_integrity,
@@ -125,6 +127,8 @@ __all__ = [
     "validate_code",
     "get_code_snippet",
     "list_code_snippets",
+    "set_output_dir",
+    "get_output_dir",
     # Scientific rigor
     "check_scientific_rigor",
     "validate_data_integrity",

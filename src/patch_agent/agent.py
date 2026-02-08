@@ -6,6 +6,8 @@ for patch-clamp electrophysiology analysis.
 """
 
 import logging
+import tempfile
+from pathlib import Path
 from typing import Optional, Dict, Any, List, Callable
 
 # Import Copilot SDK
@@ -71,22 +73,47 @@ class PatchAgent:
         self,
         model: str = "claude-sonnet-4.5",
         log_level: str = "info",
+        output_dir: Optional[str | Path] = None,
     ):
         """
         Initialize the PatchAgent.
 
         Args:
             model: The model to use for the agent (gpt-4.1, claude-sonnet-4, etc.)
-            auto_start: Whether to auto-start the Copilot CLI
             log_level: Logging level for the SDK
+            output_dir: Directory where the agent saves scripts, plots, and
+                analysis outputs.  Does NOT change the process working directory.
+                Defaults to a temp directory if not set.
         """
         self.model = model
+
+        # Resolve and create the output directory
+        if output_dir is not None:
+            self._output_dir = Path(output_dir).resolve()
+        else:
+            self._output_dir = Path(tempfile.mkdtemp(prefix="patchagent_"))
+        self._output_dir.mkdir(parents=True, exist_ok=True)
+
         self._client = CopilotClient({
                     "log_level": log_level,
                 })
         self._tools: List[Tool] = []
         self._sessions: Dict[str, Any] = {}
         self._load_tools()
+
+    # -- output_dir property --------------------------------------------------
+
+    @property
+    def output_dir(self) -> Path:
+        """The directory where the agent saves scripts, plots, and outputs."""
+        return self._output_dir
+
+    @output_dir.setter
+    def output_dir(self, value: str | Path) -> None:
+        """Change the output directory at runtime (creates it if needed)."""
+        self._output_dir = Path(value).resolve()
+        self._output_dir.mkdir(parents=True, exist_ok=True)
+        logger.info("Agent output_dir set to %s", self._output_dir)
 
     def _load_tools(self):
         """Load all available tools from the tools module."""
@@ -500,6 +527,7 @@ class PatchAgent:
             "tools": all_tools,
             "system_message": system_message,
             "custom_agents": [agent_config],
+            "streaming": True,
         }
 
         session = await self._client.create_session(config)
@@ -537,16 +565,18 @@ class PatchAgent:
 def create_agent(
     model: str = "claude-sonnet-4.5",
     log_level: str = "info",
+    output_dir: Optional[str | Path] = None,
 ) -> PatchAgent:
     """
     Factory function to create a PatchAgent.
 
     Args:
         model: The model to use
-        auto_start: Whether to auto-start the Copilot CLI
         log_level: Logging level for the SDK
+        output_dir: Directory for saving scripts, plots, and analysis outputs.
+            Does NOT change the process working directory.
 
     Returns:
         Configured PatchAgent instance
     """
-    return PatchAgent(model=model, log_level=log_level)
+    return PatchAgent(model=model, log_level=log_level, output_dir=output_dir)

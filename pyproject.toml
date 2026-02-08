@@ -55,9 +55,14 @@ cli = [
     "prompt-toolkit>=3.0",
     "Pillow>=9.0",
 ]
+web = [
+    "quart>=0.19",
+    "quart-cors>=0.7",
+]
 
 [project.scripts]
 patchagent = "patch_agent.cli:app"
+patchagent-web = "patch_agent.web.app:main"
 
 [project.urls]
 Homepage = "https://github.com/smestern/patchAgent"

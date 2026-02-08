@@ -27,9 +27,11 @@ from typing import Optional
 
 import typer
 from rich.console import Console
+from rich.live import Live
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
 from rich.theme import Theme
 
 logger = logging.getLogger(__name__)
@@ -288,13 +290,15 @@ def _save_conversation(history: list[dict], dest: Path | None = None) -> Path:
 # Welcome banner
 # ---------------------------------------------------------------------------
 
-def _print_banner(model: str, file_path: str | None = None) -> None:
+def _print_banner(model: str, file_path: str | None = None, output_dir: Path | None = None) -> None:
     banner_lines = [
         "[bold green]patchAgent[/bold green] — Patch-clamp analysis assistant",
         f"Model: [cyan]{model}[/cyan]",
     ]
     if file_path:
         banner_lines.append(f"File:  [cyan]{file_path}[/cyan]")
+    if output_dir:
+        banner_lines.append(f"Output dir: [cyan]{output_dir}[/cyan]")
     banner_lines.extend(
         [
             "",
@@ -315,11 +319,119 @@ def _print_banner(model: str, file_path: str | None = None) -> None:
 # Core chat loop (async)
 # ---------------------------------------------------------------------------
 
+async def _send_streaming(
+    session,
+    prompt: str,
+    output_dir: Path,
+    auto_open: bool,
+    timeout: float = 600,
+):
+    """Send a message using streaming events for live thinking/tool feedback.
+
+    Instead of ``send_and_wait()`` (which blocks silently), this uses the
+    event-based ``send()`` + ``session.on()`` pattern so the user sees
+    reasoning, tool invocations, and streamed response text in real time.
+    """
+    from copilot.generated.session_events import SessionEventType
+
+    collected_response = None
+    idle_event = asyncio.Event()
+    response_text_parts: list[str] = []
+    showed_thinking_header = False
+    showed_tool_header = False
+
+    def _handler(event):
+        nonlocal collected_response, showed_thinking_header, showed_tool_header
+
+        etype = event.type
+
+        # ── Reasoning / thinking deltas ────────────────────────────
+        if etype == SessionEventType.ASSISTANT_REASONING_DELTA:
+            delta = getattr(event.data, "delta_content", None) or ""
+            if delta:
+                if not showed_thinking_header:
+                    console.print()
+                    console.print("[dim italic]💭 Thinking…[/dim italic]")
+                    showed_thinking_header = True
+                console.print(f"[dim]{delta}[/dim]", end="", highlight=False)
+
+        elif etype == SessionEventType.ASSISTANT_REASONING:
+            text = getattr(event.data, "reasoning_text", None) or ""
+            if text:
+                if not showed_thinking_header:
+                    console.print()
+                    console.print("[dim italic]💭 Thinking…[/dim italic]")
+                    showed_thinking_header = True
+                console.print(f"[dim]{text}[/dim]", highlight=False)
+
+        # ── Streamed response text ─────────────────────────────────
+        elif etype == SessionEventType.ASSISTANT_MESSAGE_DELTA:
+            delta = getattr(event.data, "delta_content", None) or ""
+            if delta:
+                response_text_parts.append(delta)
+                console.print(delta, end="", highlight=False)
+
+        # ── Completed assistant message ────────────────────────────
+        elif etype == SessionEventType.ASSISTANT_MESSAGE:
+            collected_response = event
+            # If streaming was active we already printed text;
+            # otherwise fall back to full render later.
+            if response_text_parts:
+                console.print()  # newline after streamed text
+
+        # ── Tool execution feedback ────────────────────────────────
+        elif etype == SessionEventType.TOOL_EXECUTION_START:
+            tool_name = getattr(event.data, "tool_name", "tool")
+            if showed_thinking_header:
+                console.print()  # newline after thinking block
+                showed_thinking_header = False
+            console.print(f"  [bold cyan]⚙ Running:[/bold cyan] [cyan]{tool_name}[/cyan]")
+            showed_tool_header = True
+
+        elif etype == SessionEventType.TOOL_EXECUTION_COMPLETE:
+            tool_name = getattr(event.data, "tool_name", "tool")
+            console.print(f"  [dim green]✓ {tool_name} done[/dim green]")
+            showed_tool_header = False
+
+        elif etype == SessionEventType.TOOL_EXECUTION_PROGRESS:
+            msg = getattr(event.data, "progress_message", None) or ""
+            if msg:
+                console.print(f"  [dim]  ↳ {msg}[/dim]")
+
+        # ── Session idle — we're done ──────────────────────────────
+        elif etype == SessionEventType.SESSION_IDLE:
+            idle_event.set()
+
+        # ── Errors ─────────────────────────────────────────────────
+        elif etype == SessionEventType.SESSION_ERROR:
+            err_msg = getattr(event.data, "message", str(event.data))
+            console.print(Panel(err_msg, title="⚠ Session Error", border_style="red"))
+            idle_event.set()
+
+    # Subscribe, send, wait
+    unsubscribe = session.on(_handler)
+    try:
+        await session.send({"prompt": prompt})
+        try:
+            await asyncio.wait_for(idle_event.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            console.print(
+                "\n[bold yellow]⏱ Response timed out.[/bold yellow] "
+                f"The agent did not finish within {int(timeout)}s. "
+                "Use [bold]--timeout[/bold] to increase the limit."
+            )
+    finally:
+        unsubscribe()
+
+    return collected_response
+
+
 async def _chat_loop(
     model: str,
     file_path: str | None,
     output_dir: Path,
     auto_open: bool,
+    timeout: float = 600,
 ) -> None:
     """Run the interactive REPL."""
     # Lazy-import prompt_toolkit (only needed here)
@@ -349,10 +461,14 @@ async def _chat_loop(
         auto_suggest=AutoSuggestFromHistory(),
     )
 
-    _print_banner(model, file_path)
+    _print_banner(model, file_path, output_dir)
 
     # ── Start the agent ────────────────────────────────────────────────
-    agent = create_agent(model=model)
+    agent = create_agent(model=model, output_dir=output_dir)
+
+    # Also tell the code_tools module where to save scripts / expose OUTPUT_DIR
+    from patch_agent.tools.code_tools import set_output_dir
+    set_output_dir(output_dir)
 
     try:
         with console.status("[bold green]Starting patchAgent…[/bold green]"):
@@ -361,10 +477,13 @@ async def _chat_loop(
 
         # Pre-load file if requested
         if file_path:
-            with console.status(f"[bold green]Loading {file_path}…[/bold green]"):
-                response = await session.send_and_wait(
-                    {"prompt": f"Load and summarize the file at {file_path}"}
-                )
+            response = await _send_streaming(
+                session,
+                f"Load and summarize the file at {file_path}",
+                output_dir,
+                auto_open,
+                timeout,
+            )
             _render_response(response, output_dir, auto_open)
 
         # Conversation log (for /save)
@@ -420,10 +539,9 @@ async def _chat_loop(
             conversation.append({"role": "user", "text": user_input})
 
             try:
-                with console.status("[bold green]Thinking…[/bold green]"):
-                    response = await session.send_and_wait({"prompt": user_input}, timeout=30*10)
-
-                _render_response(response, output_dir, auto_open)
+                response = await _send_streaming(
+                    session, user_input, output_dir, auto_open, timeout,
+                )
 
                 # Log the response text
                 resp_text = _extract_message(response) or ""
@@ -463,6 +581,10 @@ def chat(
         None, "--output-dir", "-o",
         help="Directory for saving generated figures (default: temp dir).",
     ),
+    timeout: float = typer.Option(
+        600, "--timeout", "-t",
+        help="Max seconds to wait for agent response (default: 600).",
+    ),
     no_open: bool = typer.Option(
         False, "--no-open",
         help="Don't auto-open generated figures in the OS viewer.",
@@ -492,6 +614,7 @@ def chat(
             file_path=file,
             output_dir=out,
             auto_open=not no_open,
+            timeout=timeout,
         )
     )
 

@@ -21,6 +21,9 @@ import re
 import io
 import traceback
 import logging
+import hashlib
+from datetime import datetime
+from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 from contextlib import redirect_stdout, redirect_stderr
 
@@ -82,6 +85,19 @@ WARNING_PATTERNS = [
     (r"np\.random\.seed", "Random seed set - ensure this is for reproducibility, not cherry-picking."),
     (r"outlier.*remove|remove.*outlier", "Outlier removal detected - document criteria and report how many removed."),
     (r"exclude|skip|ignore", "Data exclusion detected - document criteria and report what was excluded."),
+    # Reimplementation warnings — prefer built-in tools and IPFX
+    (r"find_peaks\s*\(\s*voltage|find_peaks\s*\(\s*v[^a]",
+     "WARNING: Using scipy find_peaks on voltage traces. Use the detect_spikes tool or ipfx.spike_detector instead — dV/dt-based detection is more scientifically appropriate."),
+    (r"dvdt.*threshold|dv_dt.*threshold|dv\/dt",
+     "WARNING: Custom dV/dt threshold code detected. Use the detect_spikes tool or ipfx.spike_detector.detect_putative_spikes instead."),
+    (r"def\s+detect.*spike|def\s+find.*spike|def\s+spike.*detect",
+     "WARNING: Custom spike detection function detected. Use the detect_spikes tool or ipfx.spike_detector instead."),
+    (r"def\s+extract.*spike.*feature|def\s+spike.*feature|def\s+ap_feature",
+     "WARNING: Custom spike feature extraction detected. Use extract_spike_features tool or ipfx.feature_extractor.SpikeFeatureExtractor instead."),
+    (r"def\s+calc.*input.*resist|def\s+measure.*resist|def\s+compute.*rm",
+     "NOTE: Custom input resistance calculation detected. Consider using calculate_input_resistance tool or ipfx.subthresh_features first unless custom fitting is needed."),
+    (r"def\s+calc.*tau|def\s+fit.*tau|def\s+membrane.*tau",
+     "NOTE: Custom time constant calculation detected. Consider using calculate_time_constant tool or ipfx.subthresh_features first unless a specialized fit (e.g., bi-exponential decay) is needed."),
 ]
 
 
@@ -266,14 +282,58 @@ def _check_range(value, name, lo, hi):
 '''
 
 
-def get_execution_environment() -> Dict[str, Any]:
+# ---------------------------------------------------------------------------
+# Module-level output directory (set by the agent / CLI at startup)
+# ---------------------------------------------------------------------------
+_output_dir: Optional[Path] = None
+
+
+def set_output_dir(path: "str | Path") -> Path:
+    """Set the module-level output directory for code execution.
+
+    This is called by PatchAgent / CLI so that ``execute_code`` can
+    inject an ``OUTPUT_DIR`` variable into the sandbox without touching
+    ``os.chdir()``.
+
+    Returns the resolved Path.
+    """
+    global _output_dir
+    _output_dir = Path(path).resolve()
+    _output_dir.mkdir(parents=True, exist_ok=True)
+    return _output_dir
+
+
+def get_output_dir() -> Optional[Path]:
+    """Return the current output directory (may be ``None``)."""
+    return _output_dir
+
+
+def get_execution_environment(output_dir: Optional["str | Path"] = None) -> Dict[str, Any]:
     """
     Build a safe execution environment with scientific libraries.
-    
+
+    Args:
+        output_dir: Optional directory path to expose as ``OUTPUT_DIR``
+            inside the sandbox.  Falls back to the module-level default
+            set via :func:`set_output_dir`.
+
     Returns:
         Dict of global variables for code execution
     """
     env = SAFE_GLOBALS.copy()
+
+    # Resolve which output directory to expose
+    resolved_dir = None
+    if output_dir is not None:
+        resolved_dir = Path(output_dir).resolve()
+    elif _output_dir is not None:
+        resolved_dir = _output_dir
+
+    if resolved_dir is not None:
+        resolved_dir.mkdir(parents=True, exist_ok=True)
+        env["OUTPUT_DIR"] = resolved_dir
+        # Also add a convenience Path import
+        env["Path"] = Path
     
     # Import common libraries
     try:
@@ -302,13 +362,59 @@ def get_execution_environment() -> Dict[str, Any]:
     
     try:
         import matplotlib
-        matplotlib.use('Agg')  # Non-interactive backend
+        matplotlib.use('Agg')  # Non-interactive backend — no GUI windows
         import matplotlib.pyplot as plt
+        # Override plt.show() so agent-generated code never opens a GUI window.
+        # Figures are captured as base64 PNGs after execution instead.
+        plt.show = lambda *args, **kwargs: None
+        plt.ion = lambda *args, **kwargs: None  # prevent interactive mode
         env["plt"] = plt
         env["matplotlib"] = matplotlib
     except ImportError:
         pass
     
+    # Import IPFX electrophysiology analysis library
+    try:
+        import ipfx
+        env["ipfx"] = ipfx
+    except ImportError:
+        pass
+
+    try:
+        from ipfx.spike_detector import detect_putative_spikes, find_peak_indexes
+        env["detect_putative_spikes"] = detect_putative_spikes
+        env["find_peak_indexes"] = find_peak_indexes
+    except ImportError:
+        pass
+
+    try:
+        from ipfx.feature_extractor import (
+            SpikeFeatureExtractor,
+            SpikeTrainFeatureExtractor,
+        )
+        env["SpikeFeatureExtractor"] = SpikeFeatureExtractor
+        env["SpikeTrainFeatureExtractor"] = SpikeTrainFeatureExtractor
+    except ImportError:
+        pass
+
+    try:
+        from ipfx import subthresh_features as ipfx_subthresh
+        env["ipfx_subthresh"] = ipfx_subthresh
+    except ImportError:
+        pass
+
+    try:
+        from ipfx import stimulus_protocol_analysis as ipfx_protocol
+        env["ipfx_protocol"] = ipfx_protocol
+    except ImportError:
+        pass
+
+    try:
+        from ipfx import sweep_props as ipfx_sweep_props
+        env["ipfx_sweep_props"] = ipfx_sweep_props
+    except ImportError:
+        pass
+
     # Import patch_agent tools and utilities
     try:
         from ..loadFile import loadFile, loadABF, loadNWB
@@ -328,15 +434,48 @@ def get_execution_environment() -> Dict[str, Any]:
     return env
 
 
+def _save_script(code: str, output_dir: Optional["str | Path"] = None) -> Optional[Path]:
+    """Save executed code to ``OUTPUT_DIR/scripts/`` for reproducibility.
+
+    The filename is ``script_<YYYYMMDD_HHMMSS>_<hash>.py`` so multiple
+    executions within the same second don't collide.  Returns the saved
+    path, or ``None`` if there is nowhere to save.
+    """
+    target_dir: Optional[Path] = None
+    if output_dir is not None:
+        target_dir = Path(output_dir).resolve()
+    elif _output_dir is not None:
+        target_dir = _output_dir
+
+    if target_dir is None:
+        return None
+
+    scripts_dir = target_dir / "scripts"
+    scripts_dir.mkdir(parents=True, exist_ok=True)
+
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    short_hash = hashlib.md5(code.encode()).hexdigest()[:6]
+    dest = scripts_dir / f"script_{stamp}_{short_hash}.py"
+    dest.write_text(code, encoding="utf-8")
+    logger.debug("Saved script to %s", dest)
+    return dest
+
+
 def execute_code(
     code: str,
     context: Optional[Dict[str, Any]] = None,
     timeout: Optional[float] = 30.0,
     enforce_rigor: bool = True,
     inject_sanity_checks: bool = True,
+    output_dir: Optional["str | Path"] = None,
 ) -> Dict[str, Any]:
     """
     Execute custom Python code in a controlled environment.
+
+    The sandbox exposes an ``OUTPUT_DIR`` (:class:`~pathlib.Path`) variable
+    pointing to the agent's output directory.  Generated code should save
+    plots and files there (e.g. ``fig.savefig(OUTPUT_DIR / "plot.png")``).
+    The executed script is also auto-saved to ``OUTPUT_DIR/scripts/``.
 
     SCIENTIFIC RIGOR: This function enforces research integrity by:
     - Blocking code with forbidden patterns (synthetic data, result manipulation)
@@ -398,9 +537,12 @@ def execute_code(
     if inject_sanity_checks:
         code = SANITY_CHECK_HEADER + code
     
-    # Build execution environment
-    exec_globals = get_execution_environment()
+    # Build execution environment (with OUTPUT_DIR injected)
+    exec_globals = get_execution_environment(output_dir=output_dir)
     exec_locals = {}
+
+    # Auto-save the script for reproducibility
+    _save_script(code, output_dir)
     
     # Inject context variables
     if context:
@@ -456,11 +598,15 @@ def execute_code(
         
         # Check for matplotlib figures and capture as base64 PNGs
         try:
+            import matplotlib
+            matplotlib.use('Agg')  # ensure non-interactive
             import matplotlib.pyplot as plt
-            if plt.get_fignums():
+            open_figs = plt.get_fignums()
+            if open_figs:
                 import base64
+                logger.debug("Capturing %d matplotlib figure(s)", len(open_figs))
                 figures_data = []
-                for fig_num in plt.get_fignums():
+                for fig_num in open_figs:
                     fig = plt.figure(fig_num)
                     buf = io.BytesIO()
                     fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
@@ -473,8 +619,9 @@ def execute_code(
                     buf.close()
                 plt.close("all")
                 result["figures"] = figures_data
-        except Exception:
-            pass
+                logger.debug("Captured %d figure(s) as base64 PNG", len(figures_data))
+        except Exception as fig_err:
+            logger.warning("Failed to capture matplotlib figures: %s", fig_err)
             
     except Exception as e:
         result["error"] = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
