@@ -417,10 +417,11 @@ def get_execution_environment(output_dir: Optional["str | Path"] = None) -> Dict
 
     # Import patch_agent tools and utilities
     try:
-        from ..loadFile import loadFile, loadABF, loadNWB
+        from ..loadFile import loadFile, loadABF, loadNWB, NWBRecording
         env["loadFile"] = loadFile
         env["loadABF"] = loadABF
         env["loadNWB"] = loadNWB
+        env["NWBRecording"] = NWBRecording
     except ImportError:
         pass
     
@@ -688,6 +689,9 @@ print(f"Analysis complete: {{analysis_result}}")
 
     available_functions = [
         "loadFile(path) - Load ABF/NWB file, returns (dataX, dataY, dataC)",
+        "loadFile(path, return_obj=True) - Also returns NWBRecording/pyabf obj",
+        "loadFile(path, protocol_filter=['Long Square']) - Filter NWB sweeps by protocol",
+        "loadFile(path, clamp_mode_filter='CC') - Filter NWB sweeps by clamp mode",
         "resolve_data(data) - Flexible data loading with caching",
         "np.* - Full NumPy library",
         "scipy.signal.* - Signal processing (filters, peaks, etc.)",

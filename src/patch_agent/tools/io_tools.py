@@ -90,11 +90,18 @@ def get_file_metadata(file_path: str) -> Dict[str, Any]:
             "file_type": "nwb",
             "sweep_count": nwb.sweepCount,
             "sample_rate": nwb.rate.get("rate", None),
-            "protocol": "unknown",  # NWB protocol detection is complex
+            "protocol": getattr(nwb, "protocol", "unknown"),
+            "clamp_mode": getattr(nwb, "clamp_mode", "unknown"),
+            "sweep_length_sec": (
+                float(nwb.dataX[0, -1]) if nwb.dataX.size > 0 else None
+            ),
+            "protocols": getattr(nwb, "protocols", []),
             "units": {
                 "response": nwb.sweepYVars if isinstance(nwb.sweepYVars, dict) else {},
                 "command": nwb.sweepCVars if isinstance(nwb.sweepCVars, dict) else {},
             },
+            "session_description": getattr(nwb, "session_description", ""),
+            "electrode_info": getattr(nwb, "electrode_info", {}),
         }
     else:
         raise ValueError(f"Unsupported file type: {file_path}")

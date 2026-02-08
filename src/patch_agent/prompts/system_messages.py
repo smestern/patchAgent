@@ -129,9 +129,44 @@ When analyzing data:
 ## Data Formats
 You can work with:
 - ABF files (Axon Binary Format) via pyABF
-- NWB files (Neurodata Without Borders) via h5py
+- NWB files (Neurodata Without Borders) via pynwb (primary) with h5py fallback
+- Remote NWB files from DANDI via lindi (optional dependency)
 - Raw numpy arrays (voltage, current, time)
 - Lists of file paths for batch processing
+
+### NWB Loading
+NWB files are loaded via `pynwb` (primary) with automatic fallback to legacy
+`h5py` if pynwb fails. By default **all sweeps** are loaded. Use the optional
+filter parameters to select specific sweeps:
+
+```python
+# Load all sweeps
+dataX, dataY, dataC = loadFile("file.nwb")
+
+# Filter by protocol name substring(s)
+dataX, dataY, dataC = loadFile("file.nwb", protocol_filter=["Long Square", "short"])
+
+# Filter by clamp mode ("CC" or "VC")
+dataX, dataY, dataC = loadFile("file.nwb", clamp_mode_filter="CC")
+
+# Filter by specific sweep numbers
+dataX, dataY, dataC = loadFile("file.nwb", sweep_numbers=[0, 1, 5])
+
+# Get the NWBRecording object for rich metadata
+dataX, dataY, dataC, nwb = loadFile("file.nwb", return_obj=True)
+print(nwb.protocol, nwb.clamp_mode, nwb.sweepCount)
+print(nwb.protocols)       # per-sweep protocol names
+print(nwb.electrode_info)  # electrode metadata
+```
+
+### Remote NWB (DANDI)
+With the optional `lindi` package installed, you can load NWB files directly
+from DANDI URLs or `.lindi.json` / `.lindi.tar` files:
+```python
+dataX, dataY, dataC = loadFile("https://api.dandiarchive.org/...")
+```
+
+If both pynwb and the h5py fallback fail, report the errors from each attempt.
 
 ## Key Analysis Types
 

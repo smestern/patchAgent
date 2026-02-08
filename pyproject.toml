@@ -39,6 +39,7 @@ dependencies = [
     "matplotlib>=3.4",
     "pyabf>=2.3",
     "ipfx>=1.0",
+    "pynwb>=2.5",
     "h5py>=3.0",
     "copilot",  # GitHub Copilot SDK
 ]
@@ -58,6 +59,9 @@ cli = [
 web = [
     "quart>=0.19",
     "quart-cors>=0.7",
+]
+remote = [
+    "lindi",  # Remote NWB / DANDI loading support
 ]
 
 [project.scripts]

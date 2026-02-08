@@ -79,6 +79,44 @@ When a user provides a file:
 3. Ask for clarification if protocol is unclear
 ```
 
+### NWB File Loading
+
+NWB files are loaded via `pynwb` (primary) with an automatic fallback to the
+legacy `h5py`-based loader if pynwb fails. By default **all sweeps** are loaded.
+
+**Optional filters** (keyword arguments to `loadFile` / `loadNWB`):
+- `protocol_filter=["Long Square"]` — substring match on `stimulus_description`
+- `clamp_mode_filter="CC"` — only current-clamp (or `"VC"` for voltage-clamp)
+- `sweep_numbers=[0, 1, 5]` — explicit sweep number list
+
+**Getting rich metadata** — pass `return_obj=True` to get an `NWBRecording`:
+```python
+dataX, dataY, dataC, nwb = loadFile(path, return_obj=True)
+nwb.protocol          # dominant protocol name
+nwb.clamp_mode        # dominant clamp mode (CC/VC)
+nwb.protocols         # per-sweep protocol list
+nwb.clamp_modes       # per-sweep clamp mode list
+nwb.sweep_numbers     # per-sweep sweep numbers
+nwb.electrode_info    # electrode metadata dict
+nwb.session_description
+nwb.sample_rate       # Hz
+```
+
+**Remote NWB / DANDI** — requires optional `lindi` dependency:
+```python
+dataX, dataY, dataC = loadFile("https://api.dandiarchive.org/...", return_obj=True)
+```
+
+**When 0 sweeps are returned**:
+- Check available protocols: `nwb.protocols` on the unfiltered load
+- Adjust `protocol_filter` or set to `None` to load all
+
+**Fallback behavior**:
+- If pynwb cannot open the file, the legacy h5py loader is tried automatically
+- If both fail, errors from each attempt are reported
+
+---
+
 ### Pre-Analysis Quality Control
 
 Before running analysis:

@@ -11,8 +11,6 @@ from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
-# MCP Server implementation placeholder
-# Full implementation depends on the MCP library being available
 
 
 class PatchAgentMCPServer:

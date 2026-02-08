@@ -5,7 +5,7 @@ Provides unified loading interface for ABF and NWB electrophysiology files.
 Original source: https://github.com/smestern/pyAPisolation/tree/master/pyAPisolation/loadFile
 """
 
-from .loadNWB import loadNWB, loadFile, GLOBAL_STIM_NAMES
+from .loadNWB import loadNWB, loadFile, NWBRecording
 from .loadABF import loadABF
 
-__all__ = ["loadFile", "loadABF", "loadNWB", "GLOBAL_STIM_NAMES"]
+__all__ = ["loadFile", "loadABF", "loadNWB", "NWBRecording"]

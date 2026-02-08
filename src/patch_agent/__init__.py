@@ -6,7 +6,7 @@ Powered by the GitHub Copilot SDK.
 
 __version__ = "0.1.0"
 
-from .loadFile import loadFile, loadABF, loadNWB
+from .loadFile import loadFile, loadABF, loadNWB, NWBRecording
 
 # Agent imports are guarded because the Copilot SDK may not be installed
 # in every environment (e.g. when only using the CLI entry-point discovery
@@ -25,6 +25,7 @@ __all__ = [
     "loadFile",
     "loadABF",
     "loadNWB",
+    "NWBRecording",
     # Agent
     "PatchAgent",
     "create_agent",
