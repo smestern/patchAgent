@@ -1,51 +1,36 @@
 """
 MCP Server for Patch-Clamp Analysis Tools
 
-Exposes patch-clamp analysis tools via Model Context Protocol (MCP).
+Subclasses ``sciagent.mcp.BaseMCPServer`` to expose patch-clamp
+analysis tools via the Model Context Protocol.
 """
 
 import asyncio
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict
+
+import numpy as np
+
+from sciagent.mcp import BaseMCPServer
 
 logger = logging.getLogger(__name__)
 
 
-
-class PatchAgentMCPServer:
+class PatchAgentMCPServer(BaseMCPServer):
     """
-    MCP Server that exposes patch-clamp analysis tools.
-    
-    This allows the tools to be used from any MCP-compatible client,
-    including VS Code extensions and other AI assistants.
+    MCP Server exposing patch-clamp analysis tools.
+
+    Inherits JSON-RPC dispatch and tool registration from
+    ``BaseMCPServer``; adds electrophysiology-specific tools.
     """
 
-    def __init__(self, config_path: Optional[str] = None):
-        """
-        Initialize the MCP server.
+    def __init__(self):
+        super().__init__(name="patch-agent-mcp", version="0.1.0")
+        self._register_patch_tools()
 
-        Args:
-            config_path: Path to mcp_config.json, defaults to same directory
-        """
-        self.config_path = config_path or "mcp_config.json"
-        self.config = self._load_config()
-        self.tools = self._register_tools()
-
-    def _load_config(self) -> Dict[str, Any]:
-        """Load MCP configuration from JSON file."""
-        import os
-        
-        config_file = os.path.join(os.path.dirname(__file__), self.config_path)
-        try:
-            with open(config_file, "r") as f:
-                return json.load(f)
-        except FileNotFoundError:
-            logger.warning(f"Config file not found: {config_file}")
-            return {"name": "patch-agent-mcp", "tools": {}}
-
-    def _register_tools(self) -> Dict[str, callable]:
-        """Register tool handlers."""
+    def _register_patch_tools(self):
+        """Register all patch-clamp-specific tools."""
         from patch_agent.tools import (
             load_file,
             get_file_metadata,
@@ -58,199 +43,108 @@ class PatchAgentMCPServer:
         )
         from patch_agent.tools.io_tools import get_sweep_data
 
-        return {
-            "load_file": self._wrap_tool(load_file),
-            "get_file_metadata": self._wrap_tool(get_file_metadata),
-            "detect_spikes": self._wrap_spike_tool(detect_spikes),
-            "extract_spike_features": self._wrap_spike_tool(extract_spike_features),
-            "calculate_input_resistance": self._wrap_passive_tool(calculate_input_resistance),
-            "calculate_time_constant": self._wrap_passive_tool(calculate_time_constant),
-            "run_sweep_qc": self._wrap_qc_tool(run_sweep_qc),
-            "fit_exponential": self._wrap_fit_tool(fit_exponential),
-        }
+        # -- Direct tools (take simple params) --------------------------------
+        self.register_tool("load_file", self._wrap(load_file), {
+            "description": "Load an ABF or NWB electrophysiology file",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "file_path": {"type": "string", "description": "Path to the file"},
+                },
+                "required": ["file_path"],
+            },
+        })
+        self.register_tool("get_file_metadata", self._wrap(get_file_metadata), {
+            "description": "Get metadata from an electrophysiology file",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "file_path": {"type": "string", "description": "Path to the file"},
+                },
+                "required": ["file_path"],
+            },
+        })
 
-    def _wrap_tool(self, func):
-        """Wrap a simple tool function for MCP."""
-        async def wrapper(params: Dict[str, Any]) -> Dict[str, Any]:
-            try:
-                result = func(**params)
-                # Convert numpy arrays to lists for JSON serialization
-                return self._serialize_result(result)
-            except Exception as e:
-                logger.error(f"Tool error: {e}")
-                return {"error": str(e)}
-        return wrapper
+        # -- Tools that need sweep data loaded first --------------------------
+        def _sweep_schema(extra_props=None):
+            props = {
+                "file_path": {"type": "string", "description": "Path to the file"},
+                "sweep_number": {"type": "integer", "description": "Sweep number (0-indexed)", "default": 0},
+            }
+            if extra_props:
+                props.update(extra_props)
+            return {"type": "object", "properties": props, "required": ["file_path"]}
 
-    def _wrap_spike_tool(self, func):
-        """Wrap spike analysis tools that need data loading."""
-        async def wrapper(params: Dict[str, Any]) -> Dict[str, Any]:
-            try:
-                from patch_agent.tools.io_tools import get_sweep_data
-                
-                file_path = params.pop("file_path")
-                sweep_number = params.pop("sweep_number", 0)
-                
-                sweep_data = get_sweep_data(file_path, sweep_number)
-                result = func(
-                    voltage=sweep_data["voltage"],
-                    time=sweep_data["time"],
-                    current=sweep_data["current"],
-                    **params
-                )
-                return self._serialize_result(result)
-            except Exception as e:
-                logger.error(f"Spike tool error: {e}")
-                return {"error": str(e)}
-        return wrapper
+        async def _with_sweep(func, arguments):
+            file_path = arguments.pop("file_path")
+            sweep_number = arguments.pop("sweep_number", 0)
+            sweep_data = get_sweep_data(file_path, sweep_number)
+            result = func(
+                voltage=sweep_data["voltage"],
+                time=sweep_data["time"],
+                current=sweep_data.get("current"),
+                **arguments,
+            )
+            return self._serialize(result)
 
-    def _wrap_passive_tool(self, func):
-        """Wrap passive property tools."""
-        async def wrapper(params: Dict[str, Any]) -> Dict[str, Any]:
-            try:
-                from patch_agent.tools.io_tools import get_sweep_data
-                
-                file_path = params.pop("file_path")
-                sweep_number = params.pop("sweep_number", 0)
-                
-                sweep_data = get_sweep_data(file_path, sweep_number)
-                result = func(
-                    voltage=sweep_data["voltage"],
-                    current=sweep_data["current"],
-                    time=sweep_data["time"],
-                    **params
-                )
-                return self._serialize_result(result)
-            except Exception as e:
-                logger.error(f"Passive tool error: {e}")
-                return {"error": str(e)}
-        return wrapper
+        self.register_tool("detect_spikes",
+            lambda args: _with_sweep(detect_spikes, dict(args)),
+            {"description": "Detect action potentials using dV/dt threshold",
+             "inputSchema": _sweep_schema()})
 
-    def _wrap_qc_tool(self, func):
-        """Wrap QC tools."""
-        async def wrapper(params: Dict[str, Any]) -> Dict[str, Any]:
-            try:
-                from patch_agent.tools.io_tools import get_sweep_data
-                
-                file_path = params.pop("file_path")
-                sweep_number = params.pop("sweep_number", 0)
-                
-                sweep_data = get_sweep_data(file_path, sweep_number)
-                result = func(
-                    voltage=sweep_data["voltage"],
-                    current=sweep_data["current"],
-                    time=sweep_data["time"],
-                    **params
-                )
-                return self._serialize_result(result)
-            except Exception as e:
-                logger.error(f"QC tool error: {e}")
-                return {"error": str(e)}
-        return wrapper
+        self.register_tool("extract_spike_features",
+            lambda args: _with_sweep(extract_spike_features, dict(args)),
+            {"description": "Extract spike features (threshold, amplitude, width)",
+             "inputSchema": _sweep_schema()})
 
-    def _wrap_fit_tool(self, func):
-        """Wrap fitting tools."""
-        async def wrapper(params: Dict[str, Any]) -> Dict[str, Any]:
-            try:
-                from patch_agent.tools.io_tools import get_sweep_data
-                import numpy as np
-                
-                file_path = params.pop("file_path")
-                sweep_number = params.pop("sweep_number", 0)
-                
-                sweep_data = get_sweep_data(file_path, sweep_number)
-                result = func(
-                    y=sweep_data["voltage"],
-                    x=sweep_data["time"],
-                    **params
-                )
-                return self._serialize_result(result)
-            except Exception as e:
-                logger.error(f"Fit tool error: {e}")
-                return {"error": str(e)}
-        return wrapper
+        self.register_tool("calculate_input_resistance",
+            lambda args: _with_sweep(calculate_input_resistance, dict(args)),
+            {"description": "Calculate input resistance from hyperpolarizing step",
+             "inputSchema": _sweep_schema()})
 
-    def _serialize_result(self, result: Any) -> Dict[str, Any]:
-        """Serialize result for JSON, converting numpy arrays to lists."""
-        import numpy as np
-        
-        if isinstance(result, dict):
-            return {k: self._serialize_value(v) for k, v in result.items()}
-        return self._serialize_value(result)
+        self.register_tool("calculate_time_constant",
+            lambda args: _with_sweep(calculate_time_constant, dict(args)),
+            {"description": "Fit membrane time constant (tau)",
+             "inputSchema": _sweep_schema()})
 
-    def _serialize_value(self, value: Any) -> Any:
-        """Serialize a single value."""
-        import numpy as np
-        
+        self.register_tool("run_sweep_qc",
+            lambda args: _with_sweep(run_sweep_qc, dict(args)),
+            {"description": "Run quality control checks on a sweep",
+             "inputSchema": _sweep_schema()})
+
+        self.register_tool("fit_exponential",
+            lambda args: _with_sweep(fit_exponential, dict(args)),
+            {"description": "Fit single exponential to data",
+             "inputSchema": _sweep_schema()})
+
+    # -- Helpers --------------------------------------------------------------
+
+    def _wrap(self, func):
+        """Wrap a sync tool for async dispatch."""
+        async def _handler(arguments: dict):
+            result = func(**arguments)
+            return self._serialize(result)
+        return _handler
+
+    def _serialize(self, value: Any) -> Any:
+        """Recursively convert numpy types to JSON-safe Python types."""
         if isinstance(value, np.ndarray):
             return value.tolist()
-        elif isinstance(value, (np.integer, np.floating)):
+        if isinstance(value, (np.integer,)):
+            return int(value)
+        if isinstance(value, (np.floating,)):
             return float(value)
-        elif isinstance(value, dict):
-            return {k: self._serialize_value(v) for k, v in value.items()}
-        elif isinstance(value, list):
-            return [self._serialize_value(v) for v in value]
+        if isinstance(value, dict):
+            return {k: self._serialize(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [self._serialize(v) for v in value]
         return value
-
-    async def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Handle an incoming MCP request.
-
-        Args:
-            request: MCP request with 'method' and 'params'
-
-        Returns:
-            MCP response
-        """
-        method = request.get("method")
-        params = request.get("params", {})
-
-        if method == "tools/list":
-            return {"tools": list(self.config.get("tools", {}).keys())}
-        
-        elif method == "tools/call":
-            tool_name = params.get("name")
-            tool_params = params.get("arguments", {})
-            
-            if tool_name in self.tools:
-                result = await self.tools[tool_name](tool_params)
-                return {"content": [{"type": "text", "text": json.dumps(result)}]}
-            else:
-                return {"error": f"Unknown tool: {tool_name}"}
-        
-        elif method == "resources/list":
-            return {"resources": list(self.config.get("resources", {}).keys())}
-        
-        else:
-            return {"error": f"Unknown method: {method}"}
-
-    async def run(self, host: str = "localhost", port: int = 8080):
-        """
-        Run the MCP server.
-
-        Args:
-            host: Host to bind to
-            port: Port to listen on
-        """
-        # Placeholder for actual MCP server implementation
-        # This would use the MCP library when available
-        logger.info(f"MCP Server would start on {host}:{port}")
-        logger.info(f"Available tools: {list(self.tools.keys())}")
-        
-        # Keep running
-        while True:
-            await asyncio.sleep(1)
 
 
 def main():
-    """Main entry point for running the MCP server."""
+    """Run the MCP server over stdio."""
     logging.basicConfig(level=logging.INFO)
-    
-    server = PatchAgentMCPServer()
-    
-    try:
-        asyncio.run(server.run())
-    except KeyboardInterrupt:
-        logger.info("Server stopped")
+    PatchAgentMCPServer().run()
 
 
 if __name__ == "__main__":

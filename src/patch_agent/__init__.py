@@ -1,7 +1,7 @@
 """
 patchAgent - A scientific analysis agent for patch-clamp electrophysiology
 
-Powered by the GitHub Copilot SDK.
+Built on the sciagent framework, powered by the GitHub Copilot SDK.
 """
 
 __version__ = "0.1.0"
@@ -12,11 +12,12 @@ from .loadFile import loadFile, loadABF, loadNWB, NWBRecording
 # in every environment (e.g. when only using the CLI entry-point discovery
 # or the direct tool API).
 try:
-    from .agent import PatchAgent, create_agent, AGENT_CONFIG
+    from .agent import PatchAgent, create_agent
+    from .config import PATCH_CONFIG
 except ImportError:
     PatchAgent = None  # type: ignore[assignment,misc]
     create_agent = None  # type: ignore[assignment]
-    AGENT_CONFIG = None  # type: ignore[assignment]
+    PATCH_CONFIG = None  # type: ignore[assignment]
 
 __all__ = [
     # Version
@@ -29,5 +30,5 @@ __all__ = [
     # Agent
     "PatchAgent",
     "create_agent",
-    "AGENT_CONFIG",
+    "PATCH_CONFIG",
 ]
