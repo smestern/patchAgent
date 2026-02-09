@@ -612,12 +612,25 @@ def execute_code(
                     buf = io.BytesIO()
                     fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
                     buf.seek(0)
-                    figures_data.append({
+                    fig_data = {
                         "figure_number": fig_num,
                         "image_base64": base64.b64encode(buf.read()).decode("utf-8"),
                         "format": "png",
-                    })
+                    }
+                    figures_data.append(fig_data)
                     buf.close()
+                    
+                    # Push figure to websocket queue for real-time display
+                    try:
+                        from patch_agent.web.figure_queue import (
+                            push_figure_to_current_session
+                        )
+                        push_figure_to_current_session(fig_data)
+                    except ImportError:
+                        pass  # Web module not available (CLI mode)
+                    except Exception as q_err:
+                        logger.debug("Failed to push figure to queue: %s", q_err)
+                
                 plt.close("all")
                 result["figures"] = figures_data
                 logger.debug("Captured %d figure(s) as base64 PNG", len(figures_data))

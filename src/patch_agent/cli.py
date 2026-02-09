@@ -620,6 +620,37 @@ def chat(
 
 
 @app.command()
+def web(
+    port: int = typer.Option(8080, "--port", "-p", help="Port to listen on."),
+    host: str = typer.Option("127.0.0.1", "--host", help="Host to bind to."),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug mode with auto-reload."),
+) -> None:
+    """Launch the browser-based chat demo."""
+    try:
+        from patch_agent.web.app import create_app
+    except ImportError as exc:
+        console.print(
+            Panel(
+                f"Could not import the web module.\n\n{exc}\n\n"
+                "Install the web extras:\n  pip install -e '.[web]'",
+                title="⚠ Missing dependency",
+                border_style="red",
+            )
+        )
+        raise typer.Exit(code=1)
+
+    console.print(
+        Panel(
+            f"[bold green]patchAgent web demo[/bold green]\n"
+            f"Open [bold cyan]http://{host}:{port}[/bold cyan] in your browser.",
+            border_style="green",
+        )
+    )
+    web_app = create_app()
+    web_app.run(host=host, port=port, debug=debug)
+
+
+@app.command()
 def version() -> None:
     """Show patchAgent version."""
     from patch_agent import __version__

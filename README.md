@@ -28,7 +28,11 @@ patchAgent/
 │   ├── loadFile/             # Vendored I/O module
 │   ├── tools/                # Agent tools
 │   ├── utils/                # Utilities (data resolver, etc.)
-│   └── prompts/              # System prompts
+│   ├── prompts/              # System prompts
+│   └── web/                  # Browser-based chat demo (Quart)
+│       ├── app.py            # Backend: WebSocket + REST API
+│       ├── templates/        # HTML template
+│       └── static/           # CSS + JS (vanilla, no build)
 ├── docs/                     # Documentation
 │   ├── Agents.md             # Sub-agent definitions
 │   ├── Skills.md             # Skill overview
@@ -147,6 +151,47 @@ print(f"Mean spike amplitude: {features['mean_amplitude']:.1f} mV")
 - [Tools](docs/Tools.md) — Available tools and schemas
 - [Protocol](docs/Protocol.md) — Recording protocol metadata template
 - [Operations](docs/Operations.md) — Agent operating procedures
+
+## Web Demo
+
+patchAgent includes a browser-based chat interface for demos and quick exploration.
+
+### Local Setup
+
+```bash
+# Install with web extras
+pip install -e ".[web,cli]"
+
+# Launch the web server
+patchagent web
+
+# Or with options:
+patchagent web --port 3000 --debug
+```
+
+Then open [http://127.0.0.1:8080](http://127.0.0.1:8080) in your browser.
+
+### Features
+
+- Streaming chat with real-time thinking indicators and tool status
+- Markdown rendering with syntax-highlighted code blocks
+- Inline figure display (spike plots, IV curves, etc.)
+- File upload (ABF / NWB) or use bundled sample files
+- Dark / light theme toggle
+- Mobile-responsive layout
+
+### Docker Deployment
+
+```bash
+# Build the image
+docker build -t patchagent-web .
+
+# Run it (set your Copilot auth token)
+docker run -p 8080:8080 -e COPILOT_API_KEY=your-key patchagent-web
+```
+
+Deploy the container to any hosting service (Railway, Fly.io, Azure App Service, etc.).
+Copy `.env.example` to `.env` and fill in your credentials before deploying.
 
 ## License
 
