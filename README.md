@@ -1,14 +1,15 @@
 # patchAgent
 
-A scientific analysis agent for patch-clamp electrophysiology, powered by the GitHub Copilot SDK.
+A scientific analysis agent for patch-clamp electrophysiology, built on the [**sciagent**](https://github.com/smestern/sciagent) framework and powered by the GitHub Copilot SDK.
 
 ## Overview
 
 patchAgent helps design and run Python code for analyzing patch-clamp electrophysiology recordings. It leverages:
 
+- **[sciagent](https://github.com/smestern/sciagent)** — Generic scientific coding agent framework (base agent, guardrails, sandbox, web UI, CLI)
 - **[pyABF](https://github.com/swharden/pyABF)** — ABF file I/O
 - **[IPFX](https://ipfx.readthedocs.io/)** — Electrophysiology feature extraction
-- **[GitHub Copilot SDK](https://github.com/github/copilot-sdk)** — Agent framework
+- **[GitHub Copilot SDK](https://github.com/github/copilot-sdk)** — LLM agent framework
 
 ## Features
 
@@ -17,38 +18,78 @@ patchAgent helps design and run Python code for analyzing patch-clamp electrophy
 - **Passive Properties**: Input resistance, time constant, sag, capacitance
 - **Quality Control**: Seal resistance, access resistance, stability checks
 - **Curve Fitting**: Exponential fits, IV curves, f-I relationships
+- **Guardrails**: Physiological bounds checking, code scanning for synthetic data / result manipulation, data integrity validation
+- **Web UI**: Branded chat interface with WebSocket streaming, file upload, inline figures
+- **CLI**: Rich terminal REPL with slash commands, history, markdown rendering
+- **MCP Server**: Expose tools via Model Context Protocol for use from any MCP-compatible client
+
+## Architecture
+
+patchAgent is a domain-specific implementation of the **sciagent** framework.
+All generic infrastructure (agent lifecycle, code sandbox, guardrails, web UI, CLI, MCP transport) lives in sciagent.
+patchAgent adds electrophysiology-specific tools, prompts, bounds, and file loaders.
+
+```
+sciagent (framework)            patchAgent (domain layer)
+├── BaseScientificAgent    ←──  PatchAgent(BaseScientificAgent)
+├── AgentConfig            ←──  PATCH_CONFIG
+├── ScientificCLI          ←──  PatchCLI(ScientificCLI)
+├── create_app()           ←──  web/app.py delegates here
+├── BaseMCPServer          ←──  PatchAgentMCPServer(BaseMCPServer)
+├── CodeScanner            ←──  + patch-clamp forbidden patterns
+├── BoundsChecker          ←──  + physiological bounds (Vm, Ri, tau, …)
+└── build_system_message() ←──  PATCH_ANALYST_SYSTEM_MESSAGE
+```
 
 ## Project Structure
 
 ```
 patchAgent/
-├── .copilot/skills/          # Skill definitions for the agent
-├── mcp/                      # MCP server configuration
+├── mcp/                      # MCP server (subclasses BaseMCPServer)
 ├── src/patch_agent/          # Main Python package
-│   ├── loadFile/             # Vendored I/O module
-│   ├── tools/                # Agent tools
-│   ├── utils/                # Utilities (data resolver, etc.)
-│   ├── prompts/              # System prompts
-│   └── web/                  # Browser-based chat demo (Quart)
-│       ├── app.py            # Backend: WebSocket + REST API
-│       ├── templates/        # HTML template
-│       └── static/           # CSS + JS (vanilla, no build)
+│   ├── config.py             # PATCH_CONFIG — branding, bounds, patterns
+│   ├── agent.py              # PatchAgent(BaseScientificAgent)
+│   ├── cli.py                # PatchCLI(ScientificCLI) + Typer commands
+│   ├── loadFile/             # ABF / NWB file loaders
+│   ├── tools/                # Domain-specific analysis tools
+│   │   ├── io_tools.py       # File loading & sweep access
+│   │   ├── spike_tools.py    # Spike detection & features
+│   │   ├── passive_tools.py  # Rin, tau, sag, Vrest
+│   │   ├── qc_tools.py       # Sweep quality control
+│   │   ├── fitting_tools.py  # IV, f-I, exponential fits
+│   │   └── code_tools.py     # Code sandbox + rigor checks
+│   ├── prompts/              # Patch-clamp system prompts
+│   ├── utils/                # Data resolver
+│   └── web/                  # Thin wrapper around sciagent web UI
 ├── docs/                     # Documentation
-│   ├── Agents.md             # Sub-agent definitions
-│   ├── Skills.md             # Skill overview
-│   ├── Tools.md              # Tool reference
-│   ├── Protocol.md           # Recording protocol metadata
-│   └── Operations.md         # Operating procedures
-└── data/sample_abfs/         # Sample data for testing
+├── data/sample_abfs/         # Sample recordings for testing
+└── blog/                     # Blog posts & walkthroughs
 ```
 
 ## Installation
 
+### Prerequisites
+
+Install **sciagent** first (from local source or PyPI when published):
+
 ```bash
-pip install -e ".[cli]"
+# From local source (editable)
+cd path/to/sciagent
+pip install -e ".[cli,web]"
 ```
 
-(Omit `[cli]` if you only need the library without the interactive chat.)
+### Install patchAgent
+
+```bash
+# CLI mode (terminal chat)
+pip install -e ".[cli]"
+
+# Web mode (browser chat UI)
+pip install -e ".[web,cli]"
+
+# Everything
+pip install -e ".[cli,web,dev,remote]"
+```
 
 ## Quick Start — Interactive Chat
 
@@ -105,17 +146,17 @@ async def main():
     # Create and start the agent
     agent = create_agent(model="claude-sonnet-4.5")
     await agent.start()
-    
+
     try:
         # Create a session
         session = await agent.create_session()
-        
+
         # Send analysis request
         result = await session.send_and_wait({
             "prompt": "Load cell_001.abf and analyze spike properties"
         })
         print(result.message)
-        
+
         # Clean up
         await session.destroy()
     finally:
@@ -155,6 +196,7 @@ print(f"Mean spike amplitude: {features['mean_amplitude']:.1f} mV")
 ## Web Demo
 
 patchAgent includes a browser-based chat interface for demos and quick exploration.
+The UI is provided by sciagent and automatically branded with patchAgent's config (name, logo, accent colour, suggestion chips).
 
 ### Local Setup
 
@@ -192,6 +234,41 @@ docker run -p 8080:8080 -e COPILOT_API_KEY=your-key patchagent-web
 
 Deploy the container to any hosting service (Railway, Fly.io, Azure App Service, etc.).
 Copy `.env.example` to `.env` and fill in your credentials before deploying.
+
+## MCP Server
+
+Expose patch-clamp tools to any MCP-compatible client (VS Code, other agents):
+
+```bash
+python mcp/mcp_server.py
+```
+
+The server runs over stdio and exposes tools like `load_file`, `detect_spikes`,
+`calculate_input_resistance`, etc. See [mcp/mcp_config.json](mcp/mcp_config.json) for the full tool list.
+
+## Building Your Own Agent
+
+patchAgent is built on **sciagent**. To create your own domain-specific agent, subclass the base classes:
+
+```python
+from sciagent import BaseScientificAgent, AgentConfig
+
+MY_CONFIG = AgentConfig(
+    name="my-agent",
+    display_name="My Agent",
+    description="Analyses my domain data",
+    instructions="You are a helpful domain expert.",
+)
+
+class MyAgent(BaseScientificAgent):
+    def __init__(self):
+        super().__init__(MY_CONFIG)
+
+    def _load_tools(self):
+        return [self._create_tool(name="my_tool", ...)]
+```
+
+See the [sciagent README](https://github.com/smestern/sciagent) and `sciagent/examples/csv_analyst/` for a complete walkthrough.
 
 ## License
 
