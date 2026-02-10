@@ -431,7 +431,58 @@ def get_execution_environment(output_dir: Optional["str | Path"] = None) -> Dict
         env["DataResolver"] = DataResolver
     except ImportError:
         pass
-    
+
+    # --- Built-in wrapper tools (so execute_code can call them directly) ---
+    try:
+        from .spike_tools import (
+            detect_spikes as _detect_spikes,
+            extract_spike_features as _extract_spike_features,
+            extract_spike_train_features as _extract_spike_train_features,
+        )
+        env["detect_spikes"] = _detect_spikes
+        env["extract_spike_features"] = _extract_spike_features
+        env["extract_spike_train_features"] = _extract_spike_train_features
+    except ImportError:
+        pass
+
+    try:
+        from .passive_tools import (
+            calculate_input_resistance as _calc_rm,
+            calculate_time_constant as _calc_tau,
+            calculate_sag as _calc_sag,
+            calculate_resting_potential as _calc_vrest,
+        )
+        env["calculate_input_resistance"] = _calc_rm
+        env["calculate_time_constant"] = _calc_tau
+        env["calculate_sag"] = _calc_sag
+        env["calculate_resting_potential"] = _calc_vrest
+    except ImportError:
+        pass
+
+    try:
+        from .qc_tools import (
+            run_sweep_qc as _run_qc,
+            check_baseline_stability as _check_baseline,
+            measure_noise as _measure_noise,
+        )
+        env["run_sweep_qc"] = _run_qc
+        env["check_baseline_stability"] = _check_baseline
+        env["measure_noise"] = _measure_noise
+    except ImportError:
+        pass
+
+    try:
+        from .fitting_tools import (
+            fit_exponential as _fit_exp,
+            fit_iv_curve as _fit_iv,
+            fit_fi_curve as _fit_fi,
+        )
+        env["fit_exponential"] = _fit_exp
+        env["fit_iv_curve"] = _fit_iv
+        env["fit_fi_curve"] = _fit_fi
+    except ImportError:
+        pass
+
     return env
 
 
@@ -641,6 +692,19 @@ def execute_code(
         result["error"] = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
         result["output"] = stdout_capture.getvalue()
     
+    # Record in session log (from sciagent framework)
+    try:
+        from sciagent.tools.session_log import get_session_log
+        _log = get_session_log()
+        if _log is not None:
+            _log.record(
+                code=code,
+                success=result["success"],
+                error=result.get("error", "") or "",
+            )
+    except ImportError:
+        pass
+
     return result
 
 

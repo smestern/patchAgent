@@ -31,6 +31,14 @@ def load_file(
 
     dataX, dataY, dataC, obj = resolve_data(file_path, return_obj=True)
 
+    # Notify the framework that a file was loaded (triggers working-dir
+    # resolution and session-log recording).
+    try:
+        from sciagent.tools.code_tools import notify_file_loaded
+        notify_file_loaded(file_path)
+    except ImportError:
+        pass
+
     result = {
         "dataX": dataX,
         "dataY": dataY,

@@ -427,6 +427,10 @@ class PatchAgent(BaseScientificAgent):
             pass
         return env
 
+    def _get_script_imports(self) -> list[str]:
+        """Return domain-specific imports for the reproducible script."""
+        return ["pyabf", "ipfx", "numpy", "scipy", "matplotlib", "pandas"]
+
 
 def create_agent(
     model: str = "claude-sonnet-4.5",

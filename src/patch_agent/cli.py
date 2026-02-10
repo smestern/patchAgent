@@ -126,7 +126,14 @@ def chat(
         console.print(f"File not found: {file}", style="bold red")
         raise typer.Exit(code=1)
 
-    out = Path(output_dir) if output_dir else Path(tempfile.mkdtemp(prefix="patchagent_"))
+    if output_dir:
+        out = Path(output_dir)
+    elif file:
+        # Place working dir near the file being analysed
+        from sciagent.data.resolver import resolve_working_dir
+        out = resolve_working_dir(file, "patchagent")
+    else:
+        out = Path(tempfile.mkdtemp(prefix="patchagent_"))
     out.mkdir(parents=True, exist_ok=True)
 
     cli = PatchCLI(output_dir=out)
