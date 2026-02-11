@@ -61,6 +61,39 @@ protocol:
 
 Save this as `protocols/my_long_step.yaml` in your data folder. The agent will pick it up automatically next time you start a session.
 
+### Example: multi-pulse protocol
+
+Some protocols deliver multiple pulses per sweep (e.g., a test pulse followed by a conditioning step). Use the `pulses` list under `stimulus`:
+
+```yaml
+protocol:
+  name: "Paired Pulse"
+  alt_names: ["PP", "PairedPulse", "PPR"]
+  type: "current_clamp"
+  description: "Two brief pulses to measure paired-pulse ratio"
+
+  timing:
+    sweep_duration: 1.0
+    baseline_duration: 0.2
+    inter_sweep_interval: 10
+
+  stimulus:
+    type: "step"
+    pulses:
+      - label: "pulse_1"
+        onset: 0.2             # seconds from sweep start
+        duration: 0.003        # seconds
+        amplitude: 200         # pA
+      - label: "pulse_2"
+        onset: 0.25
+        duration: 0.003
+        amplitude: 200
+
+  analysis_recommendations:
+    - "spike_detection"
+    - "paired_pulse_ratio"
+```
+
 ---
 
 ## One-Off Use (no file needed)
@@ -108,10 +141,12 @@ Each protocol YAML file has these fields (all optional except `name`):
 | Field | Description |
 |-------|-------------|
 | `name` | Protocol name (used for matching against file metadata) |
+| `alt_names` | List of alternative names for matching (e.g. `["LS", "LongSquare"]`) |
 | `type` | `"current_clamp"` or `"voltage_clamp"` |
 | `description` | Brief description of what this protocol measures |
 | `timing` | Sweep timing parameters (durations in seconds) |
 | `stimulus` | Stimulus parameters (type, amplitudes, step size) |
+| `stimulus.pulses` | List of pulses per sweep (for multi-pulse protocols) |
 | `expected_responses` | What responses to expect (e.g. `"action_potentials"`, `"sag"`) |
 | `analysis_recommendations` | Which analyses to run (e.g. `"fi_curve"`, `"input_resistance"`) |
 | `notes` | Any additional context (temperature, solutions, etc.) |

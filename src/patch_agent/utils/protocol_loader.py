@@ -162,6 +162,9 @@ def format_protocols_for_prompt(protocols: list[dict[str, Any]]) -> str:
 
     for proto in protocols:
         lines.append(f"### {proto['name']}")
+        alt = proto.get("alt_names")
+        if alt and isinstance(alt, list):
+            lines.append(f"- **Also known as:** {', '.join(str(a) for a in alt)}")
         if proto.get("type"):
             lines.append(f"- **Type:** {proto['type']}")
         if proto.get("description"):
@@ -174,8 +177,18 @@ def format_protocols_for_prompt(protocols: list[dict[str, Any]]) -> str:
 
         stimulus = proto.get("stimulus")
         if stimulus and isinstance(stimulus, dict):
-            parts = [f"{k}: {v}" for k, v in stimulus.items()]
-            lines.append(f"- **Stimulus:** {', '.join(parts)}")
+            # Top-level stimulus fields (excluding nested pulses list)
+            top = {k: v for k, v in stimulus.items() if k != "pulses"}
+            if top:
+                parts = [f"{k}: {v}" for k, v in top.items()]
+                lines.append(f"- **Stimulus:** {', '.join(parts)}")
+            # Multi-pulse details
+            pulses = stimulus.get("pulses")
+            if pulses and isinstance(pulses, list):
+                lines.append(f"- **Pulses per sweep:** {len(pulses)}")
+                for i, pulse in enumerate(pulses, 1):
+                    desc = ", ".join(f"{k}: {v}" for k, v in pulse.items())
+                    lines.append(f"  - Pulse {i}: {desc}")
 
         expected = proto.get("expected_responses")
         if expected and isinstance(expected, list):
@@ -197,11 +210,27 @@ def format_protocols_for_prompt(protocols: list[dict[str, Any]]) -> str:
 # ── Auto-matching ───────────────────────────────────────────────────
 
 
+def _normalise(s: str) -> str:
+    """Lower-case and normalise separators to spaces."""
+    return s.lower().replace("_", " ").replace("-", " ")
+
+
+def _all_names(proto: dict[str, Any]) -> list[str]:
+    """Return the protocol's primary name plus any alt_names."""
+    names = [proto["name"]]
+    alt = proto.get("alt_names")
+    if isinstance(alt, list):
+        names.extend(str(a) for a in alt)
+    return names
+
+
 def find_matching_protocol(
     protocols: list[dict[str, Any]],
     name: str,
 ) -> Optional[dict[str, Any]]:
     """Find a loaded protocol whose name matches *name* (case-insensitive substring).
+
+    Checks the protocol's ``name`` and ``alt_names`` list.
 
     Parameters
     ----------
@@ -218,21 +247,23 @@ def find_matching_protocol(
     if not protocols or not name:
         return None
 
-    name_lower = name.lower().replace("_", " ").replace("-", " ")
+    name_lower = _normalise(name)
     name_compact = name_lower.replace(" ", "")
 
     # Pass 1: exact match (case-insensitive, normalised)
     for proto in protocols:
-        proto_name = proto["name"].lower().replace("_", " ").replace("-", " ")
-        if proto_name == name_lower:
-            return proto
+        for pname in _all_names(proto):
+            pname_lower = _normalise(pname)
+            if pname_lower == name_lower:
+                return proto
 
     # Pass 2: substring match (either direction)
     for proto in protocols:
-        proto_name = proto["name"].lower().replace("_", " ").replace("-", " ")
-        proto_compact = proto_name.replace(" ", "")
-        if (proto_name in name_lower or name_lower in proto_name
-                or proto_compact in name_compact or name_compact in proto_compact):
-            return proto
+        for pname in _all_names(proto):
+            pname_lower = _normalise(pname)
+            pname_compact = pname_lower.replace(" ", "")
+            if (pname_lower in name_lower or name_lower in pname_lower
+                    or pname_compact in name_compact or name_compact in pname_compact):
+                return proto
 
     return None

@@ -1,5 +1,6 @@
 protocol:
   name: "Gap Free"
+  alt_names: ["GapFree", "Continuous", "Spontaneous", "FreeRun"]
   type: "current_clamp"
   description: "Continuous recording for spontaneous activity"
 

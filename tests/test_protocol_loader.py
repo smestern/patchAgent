@@ -212,6 +212,42 @@ class TestFindMatchingProtocol:
         match2 = find_matching_protocol(protocols, "long-square")
         assert match2 is not None
 
+    def test_alt_name_exact(self, tmp_path: Path):
+        """Match against an alt_name."""
+        d = tmp_path / "protocols"
+        d.mkdir()
+        (d / "ls.yaml").write_text(
+            "protocol:\n  name: 'Long Square'\n  alt_names: ['LS', 'LongSquare']\n",
+            encoding="utf-8",
+        )
+        protocols = load_protocols(dirs=[d])
+        assert find_matching_protocol(protocols, "LS") is not None
+        assert find_matching_protocol(protocols, "LongSquare") is not None
+
+    def test_alt_name_substring(self, tmp_path: Path):
+        """Substring matching works on alt_names too."""
+        d = tmp_path / "protocols"
+        d.mkdir()
+        (d / "ls.yaml").write_text(
+            "protocol:\n  name: 'Long Square'\n  alt_names: ['CurrentStep']\n",
+            encoding="utf-8",
+        )
+        protocols = load_protocols(dirs=[d])
+        match = find_matching_protocol(protocols, "CurrentStep_200pA")
+        assert match is not None
+        assert match["name"] == "Long Square"
+
+    def test_alt_name_no_false_positive(self, tmp_path: Path):
+        """Alt names don't cause false matches."""
+        d = tmp_path / "protocols"
+        d.mkdir()
+        (d / "ls.yaml").write_text(
+            "protocol:\n  name: 'Long Square'\n  alt_names: ['LS']\n",
+            encoding="utf-8",
+        )
+        protocols = load_protocols(dirs=[d])
+        assert find_matching_protocol(protocols, "VoltageClamp") is None
+
 
 # ── Prompt formatting tests ─────────────────────────────────────────
 
@@ -242,6 +278,34 @@ class TestFormatProtocols:
         text = format_protocols_for_prompt(protocols)
         assert "Proto A" in text
         assert "Proto B" in text
+
+    def test_alt_names_in_prompt(self, tmp_path: Path):
+        d = tmp_path / "protocols"
+        d.mkdir()
+        (d / "p.yaml").write_text(
+            "protocol:\n  name: 'Long Square'\n  alt_names: ['LS', 'LongSquare']\n",
+            encoding="utf-8",
+        )
+        protocols = load_protocols(dirs=[d])
+        text = format_protocols_for_prompt(protocols)
+        assert "Also known as" in text
+        assert "LS" in text
+
+    def test_pulses_in_prompt(self, tmp_path: Path):
+        d = tmp_path / "protocols"
+        d.mkdir()
+        (d / "pp.yaml").write_text(
+            "protocol:\n  name: 'Paired Pulse'\n  stimulus:\n"
+            "    type: step\n    pulses:\n"
+            "      - label: pulse_1\n        onset: 0.2\n        amplitude: 200\n"
+            "      - label: pulse_2\n        onset: 0.25\n        amplitude: 200\n",
+            encoding="utf-8",
+        )
+        protocols = load_protocols(dirs=[d])
+        text = format_protocols_for_prompt(protocols)
+        assert "Pulses per sweep" in text
+        assert "Pulse 1" in text
+        assert "Pulse 2" in text
 
 
 # ── Discovery tests ─────────────────────────────────────────────────

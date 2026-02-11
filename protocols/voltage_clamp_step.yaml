@@ -1,5 +1,6 @@
 protocol:
   name: "VC Steps"
+  alt_names: ["VCSteps", "VoltageClamp", "VC_Step", "IV_Curve", "VoltageStep"]
   type: "voltage_clamp"
   description: "Voltage steps for IV curve"
 
