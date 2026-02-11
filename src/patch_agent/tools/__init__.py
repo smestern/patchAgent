@@ -29,6 +29,7 @@ from .qc_tools import (
 )
 from .fitting_tools import (
     fit_exponential,
+    fit_double_exponential,
     fit_iv_curve,
     fit_fi_curve,
 )
@@ -80,6 +81,7 @@ def get_all_tools():
         measure_noise,
         # Fitting tools
         fit_exponential,
+        fit_double_exponential,
         fit_iv_curve,
         fit_fi_curve,
         # Code tools
@@ -118,6 +120,7 @@ __all__ = [
     "measure_noise",
     # Fitting
     "fit_exponential",
+    "fit_double_exponential",
     "fit_iv_curve",
     "fit_fi_curve",
     # Code
@@ -134,8 +137,6 @@ __all__ = [
     "validate_data_integrity",
     "check_physiological_bounds",
     "PHYSIOLOGICAL_BOUNDS",
-    # Meta
-    "list_code_snippets",
     # Meta
     "get_all_tools",
 ]

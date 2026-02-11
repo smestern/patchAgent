@@ -37,28 +37,28 @@ def detect_spikes(
             - threshold_indices: Array of threshold crossing indices
     """
     try:
-        from ipfx.spike_detector import detect_putative_spikes, find_peak_indexes
+        from ipfx.feature_extractor import SpikeFeatureExtractor
     except ImportError:
-        #logging.warning("IPFX not available, using fallback spike detection")
         print("Warning: IPFX not available, using fallback spike detection")
-        #return _detect_spikes_fallback(voltage, time, dv_cutoff, min_peak)
+        return _detect_spikes_fallback(voltage, time, dv_cutoff, min_peak)
 
-    # Calculate sampling rate
+    # Calculate sampling rate and convert filter to kHz for IPFX
     dt = time[1] - time[0]
-    sample_rate = 1.0 / dt
+    filter_khz = filter_calculator(dt, filter_frequency)
 
-    # Convert dv_cutoff from mV/ms to V/s for IPFX
-    dvdt_threshold = dv_cutoff  # IPFX uses mV/ms
-
-    # Detect spikes
-    spike_indices = detect_putative_spikes(
-        voltage,
-        time,
-        dv_cutoff=dvdt_threshold,
-        thresh_frac=0.05,
+    spfx = SpikeFeatureExtractor(
+        filter=filter_khz,  # IPFX expects kHz (default 10)
+        start=time[0],
+        end=time[-1],
+        dv_cutoff=dv_cutoff,
+        min_peak=min_peak,
+        min_height=min_height,
     )
 
-    if len(spike_indices) == 0:
+    # Detect spikes
+    spike_df = spfx.process(time, voltage, current if current is not None else np.zeros_like(voltage))
+
+    if spike_df.empty:
         return {
             "spike_count": 0,
             "spike_times": np.array([]),
@@ -66,13 +66,10 @@ def detect_spikes(
             "threshold_indices": np.array([]),
         }
 
-    # Find peaks
-    peak_indices = find_peak_indexes(voltage, spike_indices)
+    spike_indices = spike_df["threshold_index"].values.astype(int)
 
-    # Filter by min_peak
-    valid_mask = voltage[peak_indices] >= min_peak
-    spike_indices = spike_indices[valid_mask]
-    peak_indices = peak_indices[valid_mask]
+    # Find peaks
+    peak_indices = spike_df["peak_index"].values.astype(int)
 
     spike_times = time[peak_indices]
 
@@ -119,8 +116,9 @@ def extract_spike_features(
     except ImportError:
         return {"spike_count": 0, "features": [], "error": "IPFX not available"}
 
-    # Calculate dt
+    # Calculate filter frequency in kHz for IPFX
     dt = time[1] - time[0]
+    filter_khz = filter_calculator(dt)
 
     # Handle current
     if current is None:
@@ -128,6 +126,7 @@ def extract_spike_features(
 
     # Create feature extractor
     extractor = SpikeFeatureExtractor(
+        filter=filter_khz,  # IPFX expects kHz (default 10)
         start=time[0],
         end=time[-1],
         dv_cutoff=dv_cutoff,
@@ -140,13 +139,21 @@ def extract_spike_features(
     except Exception as e:
         return {"spike_count": 0, "features": [], "error": str(e)}
 
-    # Convert to list of dicts
+    # Convert DataFrame to list of dicts
+    if features.empty:
+        return {"spike_count": 0, "features": []}
+
     spike_features = []
-    for i in range(len(features.get("threshold_v", []))):
+    for _, row in features.iterrows():
         spike_dict = {}
-        for key in features.keys():
-            if isinstance(features[key], (list, np.ndarray)) and len(features[key]) > i:
-                spike_dict[key] = float(features[key][i])
+        for key in features.columns:
+            val = row[key]
+            if isinstance(val, (np.floating, float, np.integer, int)):
+                spike_dict[key] = float(val)
+            elif isinstance(val, (bool, np.bool_)):
+                spike_dict[key] = bool(val)
+            elif val is not None and not (isinstance(val, float) and np.isnan(val)):
+                spike_dict[key] = val
         spike_features.append(spike_dict)
 
     return {
@@ -245,3 +252,38 @@ def _detect_spikes_fallback(
         "threshold_indices": np.array([]),  # Not calculated in fallback
         "method": "fallback_scipy",
     }
+
+
+def filter_calculator(dt, filter_frequency: Optional[float] = None) -> Optional[float]:
+    """Calculate filter parameters for IPFX based on sampling interval.
+
+    IPFX uses a Bessel low-pass filter whose coefficient must be strictly < 1.0,
+    meaning the filter cutoff must be strictly below the Nyquist frequency
+    (sample_rate / 2).  The default IPFX filter is 10 kHz, which works for
+    high-rate recordings (e.g., 50 kHz) but fails at 20 kHz sampling because
+    the Nyquist frequency is exactly 10 kHz.
+
+    Strategy:
+      - If a user-supplied filter_frequency (Hz) is given and is safely below
+        Nyquist, convert it to kHz and use it.
+      - Otherwise, use the IPFX default (10 kHz) only if the sampling rate is
+        high enough; for lower rates, skip filtering (return None) so IPFX
+        computes dv/dt without a Bessel filter.
+    """
+    sample_rate = 1.0 / dt            # Hz
+    nyquist = sample_rate / 2.0       # Hz
+    default_filter_khz = 10.0         # IPFX default, in kHz
+    default_filter_hz = default_filter_khz * 1000.0
+
+    # User-supplied filter (Hz): use it if strictly below Nyquist
+    if filter_frequency is not None:
+        if filter_frequency < nyquist:
+            return filter_frequency / 1000.0   # convert Hz → kHz for IPFX
+        else:
+            return None   # requested filter ≥ Nyquist; skip filtering
+
+    # No explicit filter – use default 10 kHz when safe
+    if default_filter_hz < nyquist:
+        return default_filter_khz
+    else:
+        return None  # default would hit or exceed Nyquist; skip filtering

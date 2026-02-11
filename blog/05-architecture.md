@@ -111,7 +111,7 @@ Tool(
         "properties": {
             "file_path": {"type": "string"},
             "sweep_index": {"type": "integer"},
-            "dvdt_threshold": {"type": "number", "default": 20},
+            "dvdt_cutoff": {"type": "number", "default": 20},
         },
         "required": ["file_path", "sweep_index"],
     },
