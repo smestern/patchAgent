@@ -38,6 +38,7 @@ dependencies = [
     "ipfx>=1.0",
     "pynwb>=2.5",
     "h5py>=3.0",
+    "pyyaml>=6.0",             # protocol YAML loading
 ]
 
 [project.optional-dependencies]

@@ -40,9 +40,12 @@ class PatchAgent(BaseScientificAgent):
         model: str = "claude-sonnet-4.5",
         log_level: str = "info",
         output_dir: Optional[str | Path] = None,
+        protocols_dir: Optional[str | Path] = None,
     ):
         cfg = config or PATCH_CONFIG
         super().__init__(config=cfg, model=model, log_level=log_level, output_dir=output_dir)
+        self._protocols_dir = protocols_dir
+        self._loaded_protocols: list = []
 
     # ── Tools ───────────────────────────────────────────────────────
 
@@ -401,9 +404,20 @@ class PatchAgent(BaseScientificAgent):
     # ── System message ──────────────────────────────────────────────
 
     def _get_system_message(self) -> str:
-        """Get the patch-clamp-specific system message."""
-        from .prompts.system_messages import PATCH_ANALYST_SYSTEM_MESSAGE
-        return PATCH_ANALYST_SYSTEM_MESSAGE
+        """Get the patch-clamp-specific system message.
+
+        Loads any user-defined protocol YAML files and appends them as
+        an extra section so the LLM knows which analyses to recommend.
+        """
+        from .prompts.system_messages import build_patch_system_message
+        from .utils.protocol_loader import (
+            load_protocols,
+            format_protocols_for_prompt,
+        )
+
+        self._loaded_protocols = load_protocols(extra_dir=self._protocols_dir)
+        protocols_section = format_protocols_for_prompt(self._loaded_protocols)
+        return build_patch_system_message(extra_sections=[protocols_section])
 
     # ── Execution environment ───────────────────────────────────────
 
@@ -436,6 +450,7 @@ def create_agent(
     model: str = "claude-sonnet-4.5",
     log_level: str = "info",
     output_dir: Optional[str | Path] = None,
+    protocols_dir: Optional[str | Path] = None,
 ) -> PatchAgent:
     """
     Factory function to create a PatchAgent.
@@ -444,8 +459,14 @@ def create_agent(
         model: The model to use
         log_level: Logging level for the SDK
         output_dir: Directory for saving scripts, plots, and analysis outputs.
+        protocols_dir: Optional path to a directory containing protocol YAML files.
 
     Returns:
         Configured PatchAgent instance
     """
-    return PatchAgent(model=model, log_level=log_level, output_dir=output_dir)
+    return PatchAgent(
+        model=model,
+        log_level=log_level,
+        output_dir=output_dir,
+        protocols_dir=protocols_dir,
+    )

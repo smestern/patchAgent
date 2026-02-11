@@ -41,9 +41,9 @@ app = typer.Typer(
 class PatchCLI(ScientificCLI):
     """PatchAgent-specific CLI with electrophysiology slash commands."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, protocols_dir: Optional[str] = None, **kwargs):
         super().__init__(
-            agent_factory=lambda **kw: create_agent(**kw),
+            agent_factory=lambda **kw: create_agent(protocols_dir=protocols_dir, **kw),
             config=PATCH_CONFIG,
             **kwargs,
         )
@@ -109,6 +109,10 @@ def chat(
         None, "--output-dir", "-o",
         help="Directory for saving generated figures (default: temp dir).",
     ),
+    protocols_dir: Optional[str] = typer.Option(
+        None, "--protocols-dir",
+        help="Extra directory containing protocol YAML files.",
+    ),
     timeout: float = typer.Option(
         600, "--timeout", "-t",
         help="Max seconds to wait for agent response (default: 600).",
@@ -136,7 +140,7 @@ def chat(
         out = Path(tempfile.mkdtemp(prefix="patchagent_"))
     out.mkdir(parents=True, exist_ok=True)
 
-    cli = PatchCLI(output_dir=out)
+    cli = PatchCLI(output_dir=out, protocols_dir=protocols_dir)
     asyncio.run(cli.run())
 
 

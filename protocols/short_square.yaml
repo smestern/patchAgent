@@ -1,0 +1,20 @@
+protocol:
+  name: "Short Square"
+  type: "current_clamp"
+  description: "3ms current pulses for rheobase determination"
+
+  timing:
+    sweep_duration: 0.5        # seconds
+    baseline_duration: 0.1     # seconds before stimulus
+    stimulus_duration: 0.003   # seconds
+    post_stimulus: 0.4         # seconds after stimulus
+
+  stimulus:
+    type: "step"
+    start_amplitude: 0         # pA
+    end_amplitude: 1000        # pA
+    step_size: 10              # pA
+
+  analysis_recommendations:
+    - "rheobase"
+    - "latency"

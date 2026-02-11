@@ -1,0 +1,20 @@
+protocol:
+  name: "Ramp"
+  type: "current_clamp"
+  description: "Linear current ramp from 0 to peak"
+
+  timing:
+    sweep_duration: 3.0        # seconds
+    baseline_duration: 0.5     # seconds before stimulus
+    stimulus_duration: 2.0     # seconds
+    post_stimulus: 0.5         # seconds after stimulus
+
+  stimulus:
+    type: "ramp"
+    start_amplitude: 0         # pA
+    end_amplitude: 500         # pA
+    ramp_rate: 250             # pA/s
+
+  analysis_recommendations:
+    - "threshold_voltage"
+    - "rheobase"

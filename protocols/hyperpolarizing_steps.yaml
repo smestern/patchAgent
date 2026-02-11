@@ -1,0 +1,27 @@
+protocol:
+  name: "Hyperpol Steps"
+  type: "current_clamp"
+  description: "Hyperpolarizing steps for Rm, tau, sag"
+
+  timing:
+    sweep_duration: 1.5        # seconds
+    baseline_duration: 0.3     # seconds before stimulus
+    stimulus_duration: 1.0     # seconds
+    post_stimulus: 0.2         # seconds after stimulus
+
+  stimulus:
+    type: "step"
+    start_amplitude: -150      # pA
+    end_amplitude: -20         # pA
+    step_size: 10              # pA
+
+  expected_responses:
+    - "passive_response"
+    - "sag"
+    - "rebound"
+
+  analysis_recommendations:
+    - "input_resistance"
+    - "time_constant"
+    - "sag_ratio"
+    - "rebound_spikes"

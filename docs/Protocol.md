@@ -1,242 +1,71 @@
-# Protocol Metadata
+# Recording Protocols
 
-This document provides a template for describing recording protocols. The agent uses this information to understand how to analyze your data appropriately.
-
----
-
-## How to Use This Document
-
-1. Copy the relevant protocol template section below
-2. Fill in your specific parameters
-3. Provide this information when asking the agent to analyze data
-4. The agent will use this context to select appropriate analysis methods
+patchAgent can use protocol definitions to guide analysis — matching your recording protocol to recommended analyses automatically.
 
 ---
 
-## Protocol Template
+## Quick Start
 
-```yaml
-protocol:
-  name: "Your Protocol Name"
-  type: "current_clamp" | "voltage_clamp"
-  description: "Brief description of what this protocol measures"
-  
-  timing:
-    sweep_duration: 2.0        # seconds
-    baseline_duration: 0.5     # seconds before stimulus
-    stimulus_duration: 1.0     # seconds
-    post_stimulus: 0.5         # seconds after stimulus
-    inter_sweep_interval: 10   # seconds between sweeps
-  
-  stimulus:
-    type: "step" | "ramp" | "sine" | "custom"
-    start_amplitude: -100      # pA or mV
-    end_amplitude: 300         # pA or mV
-    step_size: 20              # pA or mV per sweep
-    
-  expected_responses:
-    - "action_potentials"      # for suprathreshold steps
-    - "passive_response"       # for hyperpolarizing steps
-    - "sag"                    # for large hyperpolarizing steps
-    
-  analysis_recommendations:
-    - "spike_detection"
-    - "input_resistance"
-    - "fi_curve"
-    
-  notes: "Any additional information about the protocol"
+patchAgent ships with templates for common protocols in the `protocols/` folder. To add your own:
+
+1. **Copy a template** from patchAgent's `protocols/` folder
+2. **Edit the fields** to match your recording setup
+3. **Save it** as a `.yaml` file in a `protocols/` folder next to your data
+
+```
+my_experiment/
+├── protocols/             ← put your .yaml files here
+│   └── my_custom_step.yaml
+├── cell_001.abf
+├── cell_002.abf
+└── ...
 ```
 
----
+That's it. When you start patchAgent from your experiment folder, it automatically loads your protocols and uses them to guide analysis.
 
-## Common Protocol Templates
+### Example: customising a template
 
-### Long Square (Current Step)
-
-Standard protocol for characterizing neuronal excitability.
+Copy `protocols/long_square.yaml` and edit it:
 
 ```yaml
 protocol:
-  name: "Long Square"
+  name: "My Long Step"
   type: "current_clamp"
-  description: "1 second current steps from -100 to +300 pA"
-  
-  timing:
-    sweep_duration: 2.0
-    baseline_duration: 0.5
-    stimulus_duration: 1.0
-    post_stimulus: 0.5
-    inter_sweep_interval: 10
-  
-  stimulus:
-    type: "step"
-    start_amplitude: -100  # pA
-    end_amplitude: 300     # pA
-    step_size: 20          # pA
-    
-  expected_responses:
-    - "passive_response"     # sweeps with negative current
-    - "subthreshold"         # small positive current
-    - "action_potentials"    # larger positive current
-    
-  analysis_recommendations:
-    - "input_resistance"     # from hyperpolarizing sweeps
-    - "time_constant"        # from hyperpolarizing sweeps
-    - "sag_ratio"            # from large hyperpolarizing sweeps
-    - "rheobase"             # first sweep with spikes
-    - "fi_curve"             # all suprathreshold sweeps
-    - "spike_features"       # representative spiking sweep
-```
+  description: "800ms current steps, -200 to +400 pA in 25 pA increments"
 
-### Short Square (Rheobase)
-
-Quick steps for finding rheobase.
-
-```yaml
-protocol:
-  name: "Short Square"
-  type: "current_clamp"
-  description: "3ms current pulses for rheobase determination"
-  
-  timing:
-    sweep_duration: 0.5
-    baseline_duration: 0.1
-    stimulus_duration: 0.003
-    post_stimulus: 0.4
-  
-  stimulus:
-    type: "step"
-    start_amplitude: 0
-    end_amplitude: 1000
-    step_size: 10
-    
-  analysis_recommendations:
-    - "rheobase"
-    - "latency"
-```
-
-### Ramp
-
-Current ramp for dynamic threshold measurement.
-
-```yaml
-protocol:
-  name: "Ramp"
-  type: "current_clamp"
-  description: "Linear current ramp from 0 to peak"
-  
-  timing:
-    sweep_duration: 3.0
-    baseline_duration: 0.5
-    stimulus_duration: 2.0
-    post_stimulus: 0.5
-  
-  stimulus:
-    type: "ramp"
-    start_amplitude: 0
-    end_amplitude: 500
-    ramp_rate: 250  # pA/s
-    
-  analysis_recommendations:
-    - "threshold_voltage"
-    - "rheobase"
-```
-
-### Hyperpolarizing Steps (Passive Properties)
-
-Protocol optimized for passive property measurement.
-
-```yaml
-protocol:
-  name: "Hyperpol Steps"
-  type: "current_clamp"
-  description: "Hyperpolarizing steps for Rm, tau, sag"
-  
   timing:
     sweep_duration: 1.5
     baseline_duration: 0.3
-    stimulus_duration: 1.0
-    post_stimulus: 0.2
-  
+    stimulus_duration: 0.8
+    post_stimulus: 0.4
+    inter_sweep_interval: 8
+
   stimulus:
     type: "step"
-    start_amplitude: -150
-    end_amplitude: -20
-    step_size: 10
-    
+    start_amplitude: -200    # pA
+    end_amplitude: 400       # pA
+    step_size: 25            # pA
+
   expected_responses:
     - "passive_response"
-    - "sag"
-    - "rebound"
-    
+    - "action_potentials"
+
   analysis_recommendations:
     - "input_resistance"
     - "time_constant"
-    - "sag_ratio"
-    - "rebound_spikes"
+    - "fi_curve"
+    - "spike_features"
+
+  notes: "Room temperature, ACSF with 2mM Ca2+"
 ```
 
-### Voltage Clamp Step
-
-Standard voltage clamp protocol.
-
-```yaml
-protocol:
-  name: "VC Steps"
-  type: "voltage_clamp"
-  description: "Voltage steps for IV curve"
-  
-  timing:
-    sweep_duration: 0.5
-    baseline_duration: 0.1
-    stimulus_duration: 0.3
-    post_stimulus: 0.1
-  
-  stimulus:
-    type: "step"
-    holding: -70       # mV
-    start_amplitude: -120
-    end_amplitude: 40
-    step_size: 10
-    
-  analysis_recommendations:
-    - "iv_curve"
-    - "conductance"
-    - "reversal_potential"
-```
-
-### Gap-Free (Continuous Recording)
-
-Continuous recording without sweeps.
-
-```yaml
-protocol:
-  name: "Gap Free"
-  type: "current_clamp"
-  description: "Continuous recording for spontaneous activity"
-  
-  timing:
-    total_duration: 300  # 5 minutes
-    
-  stimulus:
-    type: "none"  # No stimulus, holding only
-    holding_current: 0
-    
-  expected_responses:
-    - "spontaneous_spikes"
-    - "synaptic_events"
-    
-  analysis_recommendations:
-    - "spike_detection"
-    - "firing_rate"
-    - "resting_potential"
-```
+Save this as `protocols/my_long_step.yaml` in your data folder. The agent will pick it up automatically next time you start a session.
 
 ---
 
-## Providing Protocol Information
+## One-Off Use (no file needed)
 
-When asking the agent to analyze data, you can provide protocol info like:
+If you don't want to save a file, paste protocol details directly into the chat:
 
 ```
 Analyze my Long Square data:
@@ -247,11 +76,58 @@ Analyze my Long Square data:
 Please calculate input resistance, time constant, and build an f-I curve.
 ```
 
-Or simply reference a known protocol:
+Or reference a known protocol:
 
 ```
 This is a standard Long Square protocol. Please run the full analysis.
 ```
+
+---
+
+## How It Works
+
+When patchAgent starts, it looks for protocol `.yaml` files in two places:
+
+| Location | Purpose |
+|----------|---------|
+| `protocols/` next to your data (CWD) | Your custom protocols |
+| `protocols/` in the patchAgent install | Bundled defaults |
+
+If the same protocol name appears in both, your version takes priority.
+
+When you load a file, patchAgent checks its protocol metadata (e.g. the ABF protocol name) against the loaded protocols. If it finds a match, it automatically suggests the appropriate analyses.
+
+If no protocol is provided or matched, the agent will infer the protocol from the data — it just may take an extra step.
+
+---
+
+## Template Reference
+
+Each protocol YAML file has these fields (all optional except `name`):
+
+| Field | Description |
+|-------|-------------|
+| `name` | Protocol name (used for matching against file metadata) |
+| `type` | `"current_clamp"` or `"voltage_clamp"` |
+| `description` | Brief description of what this protocol measures |
+| `timing` | Sweep timing parameters (durations in seconds) |
+| `stimulus` | Stimulus parameters (type, amplitudes, step size) |
+| `expected_responses` | What responses to expect (e.g. `"action_potentials"`, `"sag"`) |
+| `analysis_recommendations` | Which analyses to run (e.g. `"fi_curve"`, `"input_resistance"`) |
+| `notes` | Any additional context (temperature, solutions, etc.) |
+
+### Bundled templates
+
+patchAgent includes these ready-to-use templates:
+
+| File | Protocol |
+|------|----------|
+| `long_square.yaml` | 1s current steps (-100 to +300 pA) |
+| `short_square.yaml` | 3ms pulses for rheobase |
+| `ramp.yaml` | Linear current ramp |
+| `hyperpolarizing_steps.yaml` | Hyperpolarizing steps for passive properties |
+| `voltage_clamp_step.yaml` | Voltage steps for IV curves |
+| `gap_free.yaml` | Continuous recording |
 
 ---
 
@@ -260,4 +136,4 @@ This is a standard Long Square protocol. Please run the full analysis.
 - Protocol information helps the agent choose appropriate analysis methods
 - If protocol is unknown, the agent will attempt to infer it from the data
 - Always mention the clamp mode (current_clamp vs voltage_clamp)
-- Include any non-standard settings or modifications
+- You can use `--protocols-dir` on the CLI to load protocols from a custom location

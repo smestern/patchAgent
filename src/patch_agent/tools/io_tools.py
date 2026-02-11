@@ -50,6 +50,27 @@ def load_file(
     if return_metadata and obj is not None:
         result["metadata"] = get_file_metadata(file_path)
 
+    # ── Auto-match protocol ────────────────────────────────────────
+    # If protocol metadata is available, try to match it against the
+    # loaded protocol definitions so the LLM gets analysis guidance.
+    try:
+        meta = get_file_metadata(file_path) if not return_metadata else result.get("metadata", {})
+        file_protocol_name = meta.get("protocol", "")
+        if file_protocol_name and file_protocol_name != "unknown":
+            from ..utils.protocol_loader import load_protocols, find_matching_protocol
+            protocols = load_protocols()
+            matched = find_matching_protocol(protocols, file_protocol_name)
+            if matched:
+                result["matched_protocol"] = {
+                    "name": matched["name"],
+                    "type": matched.get("type", ""),
+                    "description": matched.get("description", ""),
+                    "analysis_recommendations": matched.get("analysis_recommendations", []),
+                    "expected_responses": matched.get("expected_responses", []),
+                }
+    except Exception:
+        pass  # Never let protocol matching break file loading
+
     return result
 
 

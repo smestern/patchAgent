@@ -1,2 +1,11 @@
 # Created by venv; see https://docs.python.org/3/library/venv.html
-*
+/Lib/*
+/share/*
+/Scripts/*
+/.venv/
+/.mypy_cache/
+*/__pycache__/*
+/.pytest_cache/
+src/patch_agent.egg-info/*
+src/patch_agent.egg-info/PKG-INFO/*
+*.pyc

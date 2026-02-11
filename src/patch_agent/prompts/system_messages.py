@@ -236,6 +236,30 @@ PATCH_ANALYST_SYSTEM_MESSAGE = build_system_message(
 )
 
 
+def build_patch_system_message(extra_sections: list[str] | None = None) -> str:
+    """Build the system message, optionally appending extra sections.
+
+    This is used by ``PatchAgent._get_system_message()`` to inject
+    dynamically-loaded protocol definitions into the prompt.
+
+    Parameters
+    ----------
+    extra_sections : list[str], optional
+        Additional text sections (e.g. loaded protocol descriptions)
+        to append after the standard domain sections.
+    """
+    sections = [
+        PATCH_EXPERTISE,
+        PATCH_TOOL_POLICY,
+        IPFX_REFERENCE,
+        DATA_FORMATS,
+        KEY_ANALYSES,
+    ]
+    if extra_sections:
+        sections.extend(s for s in extra_sections if s)
+    return build_system_message(*sections)
+
+
 # ====================================================================
 # Sub-agent system messages (domain-specific, no duplication)
 # ====================================================================

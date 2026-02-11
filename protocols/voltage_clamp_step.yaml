@@ -1,0 +1,22 @@
+protocol:
+  name: "VC Steps"
+  type: "voltage_clamp"
+  description: "Voltage steps for IV curve"
+
+  timing:
+    sweep_duration: 0.5        # seconds
+    baseline_duration: 0.1     # seconds before stimulus
+    stimulus_duration: 0.3     # seconds
+    post_stimulus: 0.1         # seconds after stimulus
+
+  stimulus:
+    type: "step"
+    holding: -70               # mV
+    start_amplitude: -120      # mV
+    end_amplitude: 40          # mV
+    step_size: 10              # mV
+
+  analysis_recommendations:
+    - "iv_curve"
+    - "conductance"
+    - "reversal_potential"

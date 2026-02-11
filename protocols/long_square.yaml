@@ -1,0 +1,30 @@
+protocol:
+  name: "Long Square"
+  type: "current_clamp"
+  description: "1 second current steps from -100 to +300 pA"
+
+  timing:
+    sweep_duration: 2.0        # seconds
+    baseline_duration: 0.5     # seconds before stimulus
+    stimulus_duration: 1.0     # seconds
+    post_stimulus: 0.5         # seconds after stimulus
+    inter_sweep_interval: 10   # seconds between sweeps
+
+  stimulus:
+    type: "step"
+    start_amplitude: -100      # pA
+    end_amplitude: 300         # pA
+    step_size: 20              # pA
+
+  expected_responses:
+    - "passive_response"       # sweeps with negative current
+    - "subthreshold"           # small positive current
+    - "action_potentials"      # larger positive current
+
+  analysis_recommendations:
+    - "input_resistance"       # from hyperpolarizing sweeps
+    - "time_constant"          # from hyperpolarizing sweeps
+    - "sag_ratio"              # from large hyperpolarizing sweeps
+    - "rheobase"               # first sweep with spikes
+    - "fi_curve"               # all suprathreshold sweeps
+    - "spike_features"         # representative spiking sweep

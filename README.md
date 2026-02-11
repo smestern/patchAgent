@@ -21,6 +21,7 @@ patchAgent helps design and run Python code for analyzing patch-clamp electrophy
 - **Guardrails**: Physiological bounds checking, code scanning for synthetic data / result manipulation, data integrity validation
 - **Web UI**: Branded chat interface with WebSocket streaming, file upload, inline figures
 - **CLI**: Rich terminal REPL with slash commands, history, markdown rendering
+- **Protocol Matching**: Drop protocol YAML files into `protocols/` and the agent auto-matches them to your recordings (see [Protocol docs](docs/Protocol.md))
 - **MCP Server**: Expose tools via Model Context Protocol for use from any MCP-compatible client
 
 ## Architecture
@@ -45,6 +46,7 @@ sciagent (framework)            patchAgent (domain layer)
 
 ```
 patchAgent/
+├── protocols/                # Protocol YAML templates (bundled defaults)
 ├── mcp/                      # MCP server (subclasses BaseMCPServer)
 ├── src/patch_agent/          # Main Python package
 │   ├── config.py             # PATCH_CONFIG — branding, bounds, patterns

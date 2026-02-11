@@ -1,0 +1,20 @@
+protocol:
+  name: "Gap Free"
+  type: "current_clamp"
+  description: "Continuous recording for spontaneous activity"
+
+  timing:
+    total_duration: 300        # 5 minutes
+
+  stimulus:
+    type: "none"               # No stimulus, holding only
+    holding_current: 0         # pA
+
+  expected_responses:
+    - "spontaneous_spikes"
+    - "synaptic_events"
+
+  analysis_recommendations:
+    - "spike_detection"
+    - "firing_rate"
+    - "resting_potential"
