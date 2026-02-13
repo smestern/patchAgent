@@ -37,7 +37,7 @@ class PatchAgent(BaseScientificAgent):
     def __init__(
         self,
         config: Optional[AgentConfig] = None,
-        model: str = "claude-sonnet-4.5",
+        model: str = "GPT-5.3-Codex",
         log_level: str = "info",
         output_dir: Optional[str | Path] = None,
         protocols_dir: Optional[str | Path] = None,
@@ -447,7 +447,7 @@ class PatchAgent(BaseScientificAgent):
 
 
 def create_agent(
-    model: str = "claude-sonnet-4.5",
+    model: str = "GPT-5.3-Codex",
     log_level: str = "info",
     output_dir: Optional[str | Path] = None,
     protocols_dir: Optional[str | Path] = None,

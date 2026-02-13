@@ -77,6 +77,8 @@ def detect_spikes(
         "spike_count": len(spike_indices),
         "spike_times": spike_times,
         "spike_indices": peak_indices,
+        "peak_indices": peak_indices, #alt keys as the llm might expect "peak_indices" instead of "spike_indices"
+        "peak_index": peak_indices,
         "threshold_indices": spike_indices,
     }
 

@@ -61,7 +61,7 @@ from copilot import CopilotClient
 from copilot.types import Tool, SessionConfig, CustomAgentConfig
 
 class PatchAgent:
-    def __init__(self, model="claude-sonnet-4.5", output_dir=None):
+    def __init__(self, model="GPT-5.3-Codex", output_dir=None):
         self._client = CopilotClient({"log_level": "info"})
         self._tools: List[Tool] = []
         self._load_tools()         # Register all 20 tools

@@ -1,14 +1,5 @@
 # What is Patch-Clamp Electrophysiology?
 
-*A gentle introduction for the curious — no neuroscience degree required.*
-
----
-
-## The Brain Runs on Electricity
-
-Your brain is made of roughly 86 billion neurons. Each one is a tiny, living battery — it maintains a voltage difference across its membrane, typically around −70 millivolts. When a neuron "fires," that voltage briefly spikes upward in a stereotyped, all-or-nothing pulse called an **action potential** (AP). Chains of these electrical impulses are the brain's signaling language: they encode everything from sensory input to motor commands to thought itself.
-
-Understanding *how* individual neurons generate, shape, and propagate these signals is foundational to neuroscience. It tells us how drugs affect the brain, what goes wrong in diseases like epilepsy or ALS, and how different cell types contribute to neural circuits.
 
 ## Tapping the Phone Line on a Single Cell
 
@@ -90,6 +81,4 @@ That's the gap patchAgent was built to fill. But we'll get to that in [the next 
 - These features — input resistance, spike shape, firing pattern — identify cell types, reveal drug effects, and flag disease states.
 - **Analysis** of this data requires spike detection, feature extraction, and curve fitting — tasks that are tractable in code but daunting for many bench scientists.
 
----
 
-*Next: [Why We Built patchAgent →](02-why-patch-agent.md)*

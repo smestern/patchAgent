@@ -5,7 +5,13 @@ Centralises all patch-clamp-specific settings (branding, bounds,
 forbidden patterns, accepted file types, suggestion chips).
 """
 
+from pathlib import Path
+
 from sciagent.config import AgentConfig, SuggestionChip
+
+# Resolve docs directory relative to the patchAgent package root
+_PACKAGE_ROOT = Path(__file__).resolve().parent.parent.parent
+_DOCS_DIR = _PACKAGE_ROOT / "docs"
 
 # Physiological bounds for patch-clamp parameters
 PHYSIOLOGICAL_BOUNDS = {
@@ -62,6 +68,7 @@ PATCH_CONFIG = AgentConfig(
         "pynwb",
         "h5py",
     ],
-    model="claude-sonnet-4.5",
+    model="GPT-5.3-Codex",
     output_dir="patchagent_output",
+    docs_dir=str(_DOCS_DIR),
 )

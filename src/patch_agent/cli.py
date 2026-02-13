@@ -102,7 +102,7 @@ def chat(
         help="Path to an ABF or NWB file to load at startup.",
     ),
     model: str = typer.Option(
-        "claude-sonnet-4.5", "--model", "-m",
+        "GPT-5.3-Codex", "--model", "-m",
         help="LLM model name (e.g. gpt-4.1, claude-sonnet-4).",
     ),
     output_dir: Optional[str] = typer.Option(

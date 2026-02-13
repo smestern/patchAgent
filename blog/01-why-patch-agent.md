@@ -1,12 +1,9 @@
-# Why We Built patchAgent
+# What is PatchAgent
+*See: [What is Patch-Clamp Electrophysiology?](01-what-is-patch-clamp.md)*  
 
-*Biologists don't need another literature chatbot. They need a coding agent that speaks their language.*
+## The Gap
 
----
-
-## The Problem
-
-Let's be blunt about the state of things. In a typical electrophysiology lab:
+In a typical electrophysiology lab:
 
 1. **The experimentalist** spends hours at the rig recording patch-clamp data from neurons — a demanding, highly skilled procedure.
 2. **The data** comes out as ABF or NWB files, each containing dozens of sweeps of voltage and current traces.
@@ -19,7 +16,7 @@ Step 4 is where everything breaks down.
 
 Many bench scientists have taken a Python course or two. They can write a for loop and make a scatter plot. But electrophysiology analysis isn't beginner-friendly:
 
-- **Spike detection** needs dV/dt-based threshold crossing — not a simple `find_peaks()` call (which is a [common mistake](https://ipfx.readthedocs.io/) that misidentifies artefacts as spikes).
+- **Spike detection** needs dV/dt-based threshold crossing — not a simple `find_peaks()` call (which is a [common mistake](https://ipfx.readthedocs.io/) that misidentifies artifacts as spikes).
 - **Time constant fitting** requires selecting the right window, choosing single vs. double exponential, and validating the fit quality.
 - **f-I curves** require combining data across many sweeps, correctly mapping stimulus amplitudes to firing rates.
 - **Quality control** is a judgment call about baseline drift, noise levels, and series resistance — experienced analysts *know* when data looks wrong, but encoding that knowledge in code is nontrivial.
@@ -64,11 +61,6 @@ At its core, patchAgent is a [GitHub Copilot SDK](https://github.com/github/copi
 | **Curve fitting** | `fit_iv_curve`, `fit_fi_curve` | Linear/polynomial IV, linear/sqrt f-I |
 | **Code execution** | `execute_code`, `validate_code` | Sandboxed Python with rigor enforcement |
 
-### What It Isn't
-
-- ❌ A literature search tool — it doesn't fetch papers or summarize abstracts.
-- ❌ A general-purpose coding assistant — it doesn't help you build a website.
-- ❌ A replacement for scientific judgment — it runs analyses and reports results; you interpret them.
 
 ### How It Works (30-Second Version)
 
@@ -133,5 +125,5 @@ patchAgent is [MIT-licensed](https://github.com/smestern/patchAgent) and fully o
 
 ---
 
-*Previous: [← What is Patch-Clamp Electrophysiology?](01-what-is-patch-clamp.md)*  
+*See: [What is Patch-Clamp Electrophysiology?](01-what-is-patch-clamp.md)*  
 *Next: [A Walkthrough: Analyzing a Cell with patchAgent →](03-example-walkthrough.ipynb)*
