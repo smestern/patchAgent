@@ -518,6 +518,138 @@ def spectral_analysis(trace, sample_rate):
     freqs, psd = welch(trace, fs=sample_rate, nperseg=1024)
     return freqs, psd
 ''',
+
+    # ── Full analysis examples (use patchAgent tools) ──────────────
+    "fi_curve_analysis": '''
+"""F-I curve analysis using patchAgent tools.
+
+Loads a file, detects spikes in each sweep, builds a frequency-current
+(f-I) curve, and fits it to extract gain and rheobase.
+"""
+from patch_agent.tools import load_file, list_sweeps, detect_spikes, fit_fi_curve
+
+# 1. Load file
+data = load_file(file_path)
+sweeps = list_sweeps(data)
+
+# 2. Detect spikes in each sweep and build f-I data
+currents = []
+firing_rates = []
+for sweep_info in sweeps["sweep_info"]:
+    idx = sweep_info["index"]
+    t = data["dataX"][idx]
+    v = data["dataY"][idx]
+    c = data["dataC"][idx]
+
+    spikes = detect_spikes(v, t)
+    n_spikes = spikes.get("spike_count", 0)
+
+    # Estimate stimulus duration from command waveform
+    stim_mask = abs(c) > 0.5  # pA threshold
+    if stim_mask.any():
+        stim_dur = float(t[stim_mask][-1] - t[stim_mask][0])
+    else:
+        stim_dur = 1.0
+
+    rate = n_spikes / stim_dur if stim_dur > 0 else 0.0
+    currents.append(sweep_info["stim_amplitude"])
+    firing_rates.append(rate)
+
+# 3. Fit f-I curve
+fi_result = fit_fi_curve(currents, firing_rates)
+print(f"Gain: {fi_result.get('gain', 'N/A')} Hz/pA")
+print(f"Rheobase: {fi_result.get('rheobase', 'N/A')} pA")
+''',
+
+    "passive_properties": '''
+"""Passive membrane property extraction using patchAgent tools.
+
+Selects hyperpolarizing sweeps and calculates input resistance,
+membrane time constant, sag ratio, and resting potential.
+"""
+from patch_agent.tools import (
+    load_file, list_sweeps, calculate_input_resistance,
+    calculate_time_constant, calculate_sag, calculate_resting_potential,
+)
+
+# 1. Load file
+data = load_file(file_path)
+sweeps = list_sweeps(data)
+
+# 2. Find hyperpolarizing sweeps (negative current)
+hyper_sweeps = [
+    s for s in sweeps["sweep_info"]
+    if s["stim_amplitude"] < -10  # at least -10 pA
+]
+
+if not hyper_sweeps:
+    print("No hyperpolarizing sweeps found")
+else:
+    # 3. Use the largest hyperpolarizing sweep for best SNR
+    best = min(hyper_sweeps, key=lambda s: s["stim_amplitude"])
+    idx = best["index"]
+    t = data["dataX"][idx]
+    v = data["dataY"][idx]
+    c = data["dataC"][idx]
+
+    # 4. Calculate passive properties
+    rm = calculate_input_resistance(v, t, c)
+    tau = calculate_time_constant(v, t)
+    sag = calculate_sag(v, t, c)
+    vrest = calculate_resting_potential(v, t)
+
+    print(f"Input resistance: {rm.get('input_resistance_MOhm', 'N/A'):.1f} MOhm")
+    print(f"Time constant: {tau.get('tau_ms', 'N/A'):.2f} ms")
+    print(f"Sag ratio: {sag.get('sag_ratio', 'N/A'):.3f}")
+    print(f"Resting potential: {vrest.get('resting_potential_mV', 'N/A'):.1f} mV")
+''',
+
+    "spike_analysis": '''
+"""Detailed spike feature analysis using patchAgent tools.
+
+Detects spikes, extracts single-spike features (threshold, amplitude,
+width, rise/fall kinetics), and spike train features (adaptation, ISI).
+"""
+from patch_agent.tools import (
+    load_file, list_sweeps, detect_spikes,
+    extract_spike_features, extract_spike_train_features,
+)
+
+# 1. Load file
+data = load_file(file_path)
+sweeps = list_sweeps(data)
+
+# 2. Find a sweep with spikes (suprathreshold)
+spiking_sweep = None
+for s in sweeps["sweep_info"]:
+    idx = s["index"]
+    v = data["dataY"][idx]
+    t = data["dataX"][idx]
+    result = detect_spikes(v, t)
+    if result.get("spike_count", 0) > 0:
+        spiking_sweep = idx
+        break
+
+if spiking_sweep is None:
+    print("No spiking sweeps found")
+else:
+    t = data["dataX"][spiking_sweep]
+    v = data["dataY"][spiking_sweep]
+
+    # 3. Extract single-spike features
+    features = extract_spike_features(v, t)
+    print("=== Single-spike features ===")
+    for key in ["threshold_mV", "amplitude_mV", "width_ms",
+                 "rise_rate_mV_per_ms", "fall_rate_mV_per_ms"]:
+        print(f"  {key}: {features.get(key, 'N/A')}")
+
+    # 4. Extract spike train features
+    train = extract_spike_train_features(v, t)
+    print("\\n=== Spike train features ===")
+    for key in ["spike_count", "mean_firing_rate_Hz", "adaptation_index",
+                 "mean_isi_ms", "cv_isi"]:
+        print(f"  {key}: {train.get(key, 'N/A')}")
+''',
 }
 
 

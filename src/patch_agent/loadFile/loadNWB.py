@@ -513,6 +513,7 @@ def loadFile(
     clamp_mode_filter: Optional[str] = None,
     sweep_numbers: Optional[Sequence[int]] = None,
     local_cache=None,
+    clean_nans: bool = False,
 ) -> Union[
     Tuple[np.ndarray, np.ndarray, np.ndarray],
     Tuple[np.ndarray, np.ndarray, np.ndarray, Any],
@@ -533,6 +534,9 @@ def loadFile(
         sweep_numbers: Explicit list of sweep numbers to load.  ``None``
             means load all.
         local_cache: Optional ``lindi.LocalCache`` for remote file caching.
+        clean_nans: When ``True``, strip trailing NaN padding from
+            variable-length sweeps.  May return list-of-arrays when
+            sweep lengths differ after trimming.
 
     Returns:
         ``(dataX, dataY, dataC)`` or ``(dataX, dataY, dataC, obj)``
@@ -542,9 +546,9 @@ def loadFile(
     is_lindi = path_lower.endswith(".lindi.json") or path_lower.endswith(".lindi.tar")
 
     if path_lower.endswith(".abf") and not is_remote:
-        return loadABF(file_path, return_obj)
+        result = loadABF(file_path, return_obj)
     elif path_lower.endswith(".nwb") or is_remote or is_lindi:
-        return loadNWB(
+        result = loadNWB(
             file_path,
             return_obj=return_obj,
             old=old,
@@ -555,6 +559,19 @@ def loadFile(
         )
     else:
         raise ValueError(f"Unsupported file type: {file_path}")
+
+    if clean_nans:
+        from ..utils.nan_utils import clean_nans as _clean_nans
+        if return_obj:
+            dataX, dataY, dataC, obj = result
+            dataX, dataY, dataC = _clean_nans(dataX, dataY, dataC)
+            return dataX, dataY, dataC, obj
+        else:
+            dataX, dataY, dataC = result
+            dataX, dataY, dataC = _clean_nans(dataX, dataY, dataC)
+            return dataX, dataY, dataC
+
+    return result
 
 
 def loadNWB(
@@ -613,18 +630,23 @@ def loadNWB(
                 available = _discover_sweeps(nwbfile)
                 avail_protos = sorted(set(s["protocol"] for s in available))
                 avail_modes = sorted(set(s["clamp_mode"] for s in available))
-                logger.warning(
-                    "No sweeps matched filters (protocol_filter=%s, "
-                    "clamp_mode_filter=%s, sweep_numbers=%s). "
-                    "Available protocols: %s, modes: %s, "
-                    "total sweeps: %d",
-                    protocol_filter,
-                    clamp_mode_filter,
-                    sweep_numbers,
-                    avail_protos,
-                    avail_modes,
-                    len(available),
+                msg = (
+                    f"No sweeps matched filters. "
+                    f"Available protocols ({len(avail_protos)}): "
+                    f"{avail_protos[:10]}"
                 )
+                if len(avail_protos) > 10:
+                    msg += f" ... and {len(avail_protos) - 10} more"
+                msg += f". Available clamp modes: {avail_modes}. "
+                msg += f"Total sweeps in file: {len(available)}."
+                if protocol_filter:
+                    msg += f" Attempted protocol filter: {protocol_filter}"
+                if clamp_mode_filter:
+                    msg += f" Attempted clamp mode filter: {clamp_mode_filter}"
+                if sweep_numbers:
+                    msg += f" Attempted sweep numbers: {sweep_numbers}"
+                logger.warning(msg)
+                raise ValueError(msg)
 
             recording = NWBRecording(nwbfile, sweeps)
         finally:

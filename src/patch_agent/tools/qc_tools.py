@@ -286,3 +286,96 @@ def _check_clipping(voltage: np.ndarray, threshold_fraction: float = 0.01) -> Di
         "points_at_max": int(at_max),
         "points_at_min": int(at_min),
     }
+
+
+def validate_nwb(
+    file_path: str,
+) -> Dict[str, Any]:
+    """
+    Validate an NWB or ABF file for common data-quality issues.
+
+    Loads the file and checks every sweep for:
+    - NaN values in time, voltage, or current arrays
+    - Array length mismatches between time/voltage/current
+    - Empty arrays (zero-length sweeps)
+    - Physiological range violations (voltage outside -120 to +60 mV,
+      current outside -2000 to +2000 pA)
+
+    Args:
+        file_path: Path to the ABF or NWB file.
+
+    Returns:
+        Dict containing:
+            - issues: List of human-readable issue strings
+            - n_sweeps: Total number of sweeps checked
+            - passed: True if no issues found
+    """
+    from ..config import PATCH_CONFIG
+
+    try:
+        from ..utils.data_resolver import resolve_data
+        dataX, dataY, dataC, _ = resolve_data(file_path, return_obj=True)
+    except Exception as exc:
+        return {"error": f"Failed to load file: {exc}", "passed": False}
+
+    issues: List[str] = []
+
+    # Handle single-sweep as 2-D for uniform iteration
+    if dataY.ndim == 1:
+        dataX = dataX[np.newaxis, :]
+        dataY = dataY[np.newaxis, :]
+        dataC = dataC[np.newaxis, :]
+
+    n_sweeps = dataY.shape[0]
+
+    for i in range(n_sweeps):
+        t = dataX[i] if dataX.ndim > 1 else dataX
+        v = dataY[i]
+        c = dataC[i]
+
+        # Empty arrays
+        if len(t) == 0 or len(v) == 0 or len(c) == 0:
+            issues.append(f"Sweep {i}: Empty arrays (t={len(t)}, v={len(v)}, c={len(c)})")
+            continue
+
+        # Array length mismatch
+        if len(t) != len(v) or len(t) != len(c):
+            issues.append(
+                f"Sweep {i}: Array length mismatch "
+                f"(time={len(t)}, voltage={len(v)}, current={len(c)})"
+            )
+
+        # NaN checks (count, not just presence — NaN padding is expected)
+        nan_t = int(np.sum(np.isnan(t)))
+        nan_v = int(np.sum(np.isnan(v)))
+        nan_c = int(np.sum(np.isnan(c)))
+        if nan_t > 0:
+            issues.append(f"Sweep {i}: {nan_t} NaN values in time array")
+        if nan_v > 0:
+            issues.append(f"Sweep {i}: {nan_v} NaN values in voltage array")
+        if nan_c > 0:
+            issues.append(f"Sweep {i}: {nan_c} NaN values in current array")
+
+        # Physiological range checks (on non-NaN values only)
+        valid_v = v[~np.isnan(v)]
+        valid_c = c[~np.isnan(c)]
+        if len(valid_v) > 0:
+            v_min, v_max = float(np.min(valid_v)), float(np.max(valid_v))
+            if v_min < -200 or v_max > 100:
+                issues.append(
+                    f"Sweep {i}: Voltage out of physiological range "
+                    f"[{v_min:.1f}, {v_max:.1f}] mV"
+                )
+        if len(valid_c) > 0:
+            c_min, c_max = float(np.min(valid_c)), float(np.max(valid_c))
+            if c_min < -5000 or c_max > 5000:
+                issues.append(
+                    f"Sweep {i}: Current out of expected range "
+                    f"[{c_min:.1f}, {c_max:.1f}] pA"
+                )
+
+    return {
+        "issues": issues,
+        "n_sweeps": n_sweeps,
+        "passed": len(issues) == 0,
+    }

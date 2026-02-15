@@ -1,6 +1,6 @@
 protocol:
   name: "IC1"
-  alt_names: ["IC1", "IC1_long"]
+  alt_names: ["IC1", "IC1_long", "IC1_DA", "C1IC1"]
   type: "current_clamp"
   description: "A brief hypo"
 

@@ -29,7 +29,10 @@ def load_file(
     """
     from ..utils.data_resolver import resolve_data
 
-    dataX, dataY, dataC, obj = resolve_data(file_path, return_obj=True)
+    try:
+        dataX, dataY, dataC, obj = resolve_data(file_path, return_obj=True)
+    except ValueError as exc:
+        return {"error": str(exc)}
 
     # Notify the framework that a file was loaded (triggers working-dir
     # resolution and session-log recording).
@@ -307,3 +310,73 @@ def _infer_clamp_mode(sweep_label_y: str) -> str:
         return "voltage_clamp"
     else:
         return "unknown"
+
+
+def list_protocols(
+    file_path: str,
+) -> Dict[str, Any]:
+    """
+    Discover and list all unique protocols in an NWB or ABF file.
+
+    Groups sweeps by protocol name and returns counts and indices so the
+    user (or LLM) can decide which protocol to analyse.
+
+    Args:
+        file_path: Path to the ABF or NWB file.
+
+    Returns:
+        Dict containing:
+            - protocols: Dict mapping protocol name → {count, indices}
+            - unique_count: Number of unique protocol names
+            - total_sweeps: Total number of sweeps in the file
+            - matched: List of dicts with matched protocol info (from YAML)
+    """
+    from ..utils.data_resolver import resolve_data
+    from ..utils.protocol_loader import load_protocols, find_matching_protocol
+
+    try:
+        _, _, _, obj = resolve_data(file_path, return_obj=True)
+    except Exception as exc:
+        return {"error": f"Failed to load file: {exc}"}
+
+    # --- Gather per-sweep protocol names ---
+    sweep_protocols: List[str] = []
+
+    if hasattr(obj, "protocols") and obj.protocols:
+        # NWB: obj.protocols is a list of protocol names per sweep
+        sweep_protocols = list(obj.protocols)
+    elif hasattr(obj, "protocol"):
+        # ABF: single protocol name for the whole file
+        prot_name = getattr(obj, "protocol", "unknown") or "unknown"
+        n_sweeps = getattr(obj, "sweepCount", 1)
+        sweep_protocols = [prot_name] * n_sweeps
+    else:
+        return {"error": "No protocol information found in file"}
+
+    # --- Group by unique protocol name ---
+    protocols: Dict[str, Dict[str, Any]] = {}
+    for i, prot in enumerate(sweep_protocols):
+        if prot not in protocols:
+            protocols[prot] = {"count": 0, "indices": []}
+        protocols[prot]["count"] += 1
+        protocols[prot]["indices"].append(i)
+
+    # --- Try matching each unique name against loaded YAML protocols ---
+    loaded = load_protocols()
+    matched_protocols = []
+    for prot_name in protocols:
+        m = find_matching_protocol(loaded, prot_name)
+        if m:
+            matched_protocols.append({
+                "file_protocol": prot_name,
+                "matched_name": m["name"],
+                "type": m.get("type", ""),
+                "analysis_recommendations": m.get("analysis_recommendations", []),
+            })
+
+    return {
+        "protocols": protocols,
+        "unique_count": len(protocols),
+        "total_sweeps": len(sweep_protocols),
+        "matched": matched_protocols,
+    }

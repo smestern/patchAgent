@@ -1,6 +1,8 @@
 protocol:
   name: "Short Square"
-  alt_names: ["SS", "ShortSquare", "Short_Square", "3ms_step", "Rheobase"]
+  alt_names: ["SS", "ShortSquare", "Short_Square", "3ms_step", "Rheobase",
+              "SSFINEST", "X5SP", "X6SP", "SP_", "Short",
+              "ShortSquare_DA", "C1SS"]
   type: "current_clamp"
   description: "3ms current pulses for rheobase determination"
 

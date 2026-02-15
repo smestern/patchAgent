@@ -9,6 +9,7 @@ from .protocol_loader import (
     format_protocols_for_prompt,
     find_matching_protocol,
 )
+from .nan_utils import clean_nans
 
 __all__ = [
     "DataResolver",
@@ -17,4 +18,5 @@ __all__ = [
     "load_protocols",
     "format_protocols_for_prompt",
     "find_matching_protocol",
+    "clean_nans",
 ]

@@ -1,0 +1,93 @@
+# Known Public Datasets — Protocol Naming Conventions
+#
+# This file documents the protocol naming conventions used by major
+# public electrophysiology datasets.  patchAgent's protocol loader
+# already matches via substring / alt_names, but this reference lets
+# the LLM (and the user) understand *why* a particular string maps
+# to a standard protocol.
+#
+# Structure:
+#   datasets:
+#     <dataset_key>:
+#       description: Short description of the dataset
+#       source: Where the data comes from
+#       long_square_variants: list of stimulus_description strings
+#       short_square_variants: ...
+#       ramp_variants: ...
+#       typical_duration: sweep duration in seconds
+#       typical_baseline: baseline duration in seconds
+#       notes: any special handling
+
+datasets:
+
+  DANDI_000020:
+    description: "Allen Institute Patch-seq — visual cortex mouse neurons"
+    source: "https://dandiarchive.org/dandiset/000020"
+    long_square_variants:
+      - "C1LSFINEST150112_DA_0"
+      - "C1LSCOARSE150216_DA_0"
+      - "X2LP_Search_DA_0"
+      - "C1LSFINEST150820_DA_0"
+    short_square_variants:
+      - "C1SSFINEST150112_DA_0"
+      - "X5SP_SubThresh_DA_0"
+      - "X6SP_SupraThresh_DA_0"
+    ramp_variants:
+      - "X7Ramp_DA_0"
+    subthreshold_variants:
+      - "X1PS_SubThresh_DA_0"
+    suprathreshold_variants:
+      - "X4PS_SupraThresh_DA_0"
+    typical_duration: 2.0
+    typical_baseline: 0.5
+    notes: >
+      Protocol names include date stamps (e.g. 150112) and channel suffixes
+      (_DA_0).  The substring matcher handles these via the alt_names in the
+      protocol YAML files.
+
+  DANDI_000023:
+    description: "Allen Institute — human cortical neurons"
+    source: "https://dandiarchive.org/dandiset/000023"
+    long_square_variants:
+      - "Long Square"
+      - "C1LSCOARSE"
+      - "C1LSFINEST"
+    short_square_variants:
+      - "Short Square"
+      - "C1SSCOARSE"
+      - "C1SSFINEST"
+    ramp_variants:
+      - "Ramp"
+    typical_duration: 2.0
+    typical_baseline: 0.5
+
+  DANDI_000035:
+    description: "Allen Institute — mouse cortical neurons (Bhatt lab)"
+    source: "https://dandiarchive.org/dandiset/000035"
+    long_square_variants:
+      - "Long Square"
+    short_square_variants:
+      - "Short Square"
+    ramp_variants:
+      - "Ramp"
+    typical_duration: 2.0
+    typical_baseline: 0.5
+
+  ABF_GENERIC:
+    description: "Generic ABF files from various rigs"
+    source: "Local recordings"
+    long_square_variants:
+      - "LS"
+      - "LongSquare"
+      - "CurrentStep"
+      - "1s_step"
+    short_square_variants:
+      - "SS"
+      - "ShortSquare"
+      - "Rheobase"
+    ramp_variants:
+      - "Ramp"
+      - "CurrentRamp"
+    notes: >
+      ABF protocol names are typically set by the user in Clampex.
+      Names vary widely between labs.

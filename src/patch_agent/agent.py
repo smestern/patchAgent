@@ -57,6 +57,7 @@ class PatchAgent(BaseScientificAgent):
             get_file_metadata,
             get_sweep_data,
             list_sweeps,
+            list_protocols,
             # Spike tools
             detect_spikes,
             extract_spike_features,
@@ -70,6 +71,7 @@ class PatchAgent(BaseScientificAgent):
             run_sweep_qc,
             check_baseline_stability,
             measure_noise,
+            validate_nwb,
             # Fitting tools
             fit_exponential,
             fit_iv_curve,
@@ -78,6 +80,8 @@ class PatchAgent(BaseScientificAgent):
             execute_code,
             run_custom_analysis,
             validate_code,
+            get_code_snippet,
+            list_code_snippets,
             # Rigor tools
             check_scientific_rigor,
             validate_data_integrity,
@@ -131,6 +135,19 @@ class PatchAgent(BaseScientificAgent):
                     "type": "object",
                     "properties": {
                         "file_path": {"type": "string", "description": "Path to the file"},
+                    },
+                    "required": ["file_path"],
+                },
+            ),
+            self._create_tool(
+                "list_protocols",
+                "Discover and list all unique protocols in a file, with sweep counts and indices. "
+                "Also attempts to match each protocol against known protocol definitions.",
+                list_protocols,
+                {
+                    "type": "object",
+                    "properties": {
+                        "file_path": {"type": "string", "description": "Path to the ABF or NWB file"},
                     },
                     "required": ["file_path"],
                 },
@@ -275,6 +292,20 @@ class PatchAgent(BaseScientificAgent):
                     "required": ["voltage"],
                 },
             ),
+            self._create_tool(
+                "validate_nwb",
+                "Validate an NWB or ABF file for common data-quality issues "
+                "(NaN values, array mismatches, empty sweeps, physiological range violations). "
+                "Use this during the Discovery phase to check data integrity before analysis.",
+                validate_nwb,
+                {
+                    "type": "object",
+                    "properties": {
+                        "file_path": {"type": "string", "description": "Path to the ABF or NWB file"},
+                    },
+                    "required": ["file_path"],
+                },
+            ),
 
             # === Fitting Tools ===
             self._create_tool(
@@ -394,6 +425,30 @@ class PatchAgent(BaseScientificAgent):
                         "parameter": {"type": "string", "description": "Parameter name (e.g., 'input_resistance_MOhm')"},
                     },
                     "required": ["value", "parameter"],
+                },
+            ),
+
+            # === Code Snippet Tools ===
+            self._create_tool(
+                "list_code_snippets",
+                "List available code snippets and analysis examples (e.g. fi_curve_analysis, passive_properties, spike_analysis)",
+                list_code_snippets,
+                {
+                    "type": "object",
+                    "properties": {},
+                },
+            ),
+            self._create_tool(
+                "get_code_snippet",
+                "Get a code snippet by name. Use list_code_snippets first to see available names. "
+                "Returns ready-to-use Python code for common analyses.",
+                get_code_snippet,
+                {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string", "description": "Snippet name (e.g. 'fi_curve_analysis', 'passive_properties', 'spike_analysis')"},
+                    },
+                    "required": ["name"],
                 },
             ),
         ]

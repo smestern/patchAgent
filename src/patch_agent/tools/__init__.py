@@ -10,6 +10,7 @@ from .io_tools import (
     get_sweep_data,
     list_sweeps,
     list_ephys_files,
+    list_protocols,
 )
 from .spike_tools import (
     detect_spikes,
@@ -26,6 +27,7 @@ from .qc_tools import (
     run_sweep_qc,
     check_baseline_stability,
     measure_noise,
+    validate_nwb,
 )
 from .fitting_tools import (
     fit_exponential,
@@ -65,6 +67,7 @@ def get_all_tools():
         get_file_metadata,
         get_sweep_data,
         list_sweeps,
+        list_protocols,
         list_ephys_files,
         # Spike tools
         detect_spikes,
@@ -79,6 +82,7 @@ def get_all_tools():
         run_sweep_qc,
         check_baseline_stability,
         measure_noise,
+        validate_nwb,
         # Fitting tools
         fit_exponential,
         fit_double_exponential,
@@ -105,6 +109,7 @@ __all__ = [
     "get_sweep_data",
     "list_sweeps",
     "list_ephys_files",
+    "list_protocols",
     # Spike
     "detect_spikes",
     "extract_spike_features",
@@ -118,6 +123,7 @@ __all__ = [
     "run_sweep_qc",
     "check_baseline_stability",
     "measure_noise",
+    "validate_nwb",
     # Fitting
     "fit_exponential",
     "fit_double_exponential",

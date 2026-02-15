@@ -1,6 +1,8 @@
 protocol:
   name: "Long Square"
-  alt_names: ["LS", "LongSquare", "Long_Square_1s", "1s_step", "CurrentStep"]
+  alt_names: ["LS", "LongSquare", "Long_Square_1s", "1s_step", "CurrentStep",
+              "LSFINEST", "LSCOARSE", "X2LP", "LP_Search", "C1LS", "Long",
+              "LongSquare_DA", "C1LSFINEST", "C1LSCOARSE", "X2LP_Search"]
   type: "current_clamp"
   description: "1 second current steps from -100 to +300 pA"
 

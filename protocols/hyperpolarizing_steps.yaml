@@ -1,6 +1,8 @@
 protocol:
   name: "Hyperpol Steps"
-  alt_names: ["HyperpolSteps", "Hyperpolarizing", "SubThreshold", "Passive", "NegSteps"]
+  alt_names: ["HyperpolSteps", "Hyperpolarizing", "SubThreshold", "Passive", "NegSteps",
+              "X1PS", "SupraThresh", "X4PS", "SubThresh",
+              "HyperpolarizingSteps", "NegativeSteps"]
   type: "current_clamp"
   description: "Hyperpolarizing steps for Rm, tau, sag"
 

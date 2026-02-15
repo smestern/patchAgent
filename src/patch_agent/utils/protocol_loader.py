@@ -146,6 +146,9 @@ def load_protocols(
 def format_protocols_for_prompt(protocols: list[dict[str, Any]]) -> str:
     """Render loaded protocols as a plain-text section for the system message.
 
+    Also loads ``known_datasets.yaml`` (if present) and appends a summary
+    of known public dataset naming conventions.
+
     Returns an empty string when there are no protocols.
     """
     if not protocols:
@@ -203,6 +206,42 @@ def format_protocols_for_prompt(protocols: list[dict[str, Any]]) -> str:
             lines.append(f"- **Notes:** {notes}")
 
         lines.append("")
+
+    # ── Append known-dataset naming conventions (if file exists) ────
+    try:
+        import yaml
+
+        for d in discover_protocol_dirs():
+            kd_path = d / "known_datasets.yaml"
+            if kd_path.is_file():
+                with open(kd_path, "r", encoding="utf-8") as fh:
+                    kd = yaml.safe_load(fh)
+                datasets = kd.get("datasets", {}) if isinstance(kd, dict) else {}
+                if datasets:
+                    lines.append("## Known Public Dataset Naming Conventions")
+                    lines.append("")
+                    lines.append(
+                        "The following public datasets use non-standard protocol names. "
+                        "The alt_names above already cover these, but this reference "
+                        "helps you recognise dataset-specific naming patterns."
+                    )
+                    lines.append("")
+                    for key, ds in datasets.items():
+                        desc = ds.get("description", key)
+                        lines.append(f"### {key}")
+                        lines.append(f"- **Description:** {desc}")
+                        for variant_key in sorted(ds.keys()):
+                            if variant_key.endswith("_variants"):
+                                label = variant_key.replace("_variants", "").replace("_", " ").title()
+                                variants = ds[variant_key]
+                                if isinstance(variants, list):
+                                    lines.append(f"- **{label}:** {', '.join(str(v) for v in variants)}")
+                        if ds.get("notes"):
+                            lines.append(f"- **Notes:** {ds['notes'].strip()}")
+                        lines.append("")
+                break  # Only load from highest-priority dir
+    except Exception:
+        pass  # Never let known-datasets loading break prompt building
 
     return "\n".join(lines)
 

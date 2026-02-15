@@ -1,6 +1,7 @@
 protocol:
   name: "Ramp"
-  alt_names: ["CurrentRamp", "Ramp_500pA", "LinearRamp"]
+  alt_names: ["CurrentRamp", "Ramp_500pA", "LinearRamp",
+              "X7Ramp", "RampToRheo", "C1Ramp"]
   type: "current_clamp"
   description: "Linear current ramp from 0 to peak"
 
