@@ -45,25 +45,28 @@ def main(file_path: str):
     # 3. Extract single-spike features
     features = extract_spike_features(v, t)
     print(f"\n=== Single-spike features (sweep {spiking_sweep}) ===")
-    for key in [
-        "threshold_mV",
-        "amplitude_mV",
-        "width_ms",
-        "rise_rate_mV_per_ms",
-        "fall_rate_mV_per_ms",
-    ]:
-        val = features.get(key, "N/A")
-        print(f"  {key}: {val}")
+    # extract_spike_features returns IPFX column names in a "features" list
+    if features.get("features"):
+        first = features["features"][0]
+        for key in [
+            "threshold_v",
+            "peak_v",
+            "width",
+            "upstroke",
+            "downstroke",
+        ]:
+            val = first.get(key, "N/A")
+            print(f"  {key}: {val}")
 
     # 4. Extract spike train features
     train = extract_spike_train_features(v, t)
     print(f"\n=== Spike train features (sweep {spiking_sweep}) ===")
     for key in [
         "spike_count",
-        "mean_firing_rate_Hz",
+        "avg_rate",
         "adaptation_index",
-        "mean_isi_ms",
-        "cv_isi",
+        "mean_isi",
+        "isi_cv",
     ]:
         val = train.get(key, "N/A")
         print(f"  {key}: {val}")

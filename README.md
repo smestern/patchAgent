@@ -5,6 +5,7 @@ A scientific analysis agent for patch-clamp electrophysiology, built on the [**s
 The Idea here is to build more human in the loop scientific coding tools. Landing somewhere in between the basic LLM chat interface, and the end-to-end AI for science tools. The goal of this project is not to do the science for you, but you help you write strong, rigorous, and reproducible research code. 
 Essentially an LLM wrapper but with a few extra tools to make sure the LLM doesn't go off the rails.
 
+![alt text](image.png)
 
 ## Overview
 

@@ -6,6 +6,11 @@
 /.mypy_cache/
 */__pycache__/*
 /.pytest_cache/
-src/patchagent.egg-info/*
-src/patchagent.egg-info/PKG-INFO/*
+*.egg-info/
+src/patch_agent.egg-info/
 *.pyc
+
+# Generated output
+output/
+*.png
+*.csv

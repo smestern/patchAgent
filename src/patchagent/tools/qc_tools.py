@@ -7,14 +7,37 @@ Tools for checking seal resistance, access resistance, baseline stability, and n
 from typing import Union, Dict, Any, Optional, List
 import numpy as np
 
+from sciagent.tools.registry import tool
 
+from ..constants import (
+    DEFAULT_BASELINE_DURATION_S,
+    MAX_BASELINE_STD_MV,
+    MAX_BASELINE_DRIFT_MV,
+    EXPECTED_AP_AMPLITUDE_MV,
+    CLIPPING_TOLERANCE,
+)
+
+
+@tool(
+    name="run_sweep_qc",
+    description="Run quality control checks on a sweep (baseline stability, noise, integrity)",
+    parameters={
+        "type": "object",
+        "properties": {
+            "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+            "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
+            "current": {"type": "array", "items": {"type": "number"}, "description": "Current command in pA"},
+        },
+        "required": ["voltage", "time"],
+    },
+)
 def run_sweep_qc(
     voltage: np.ndarray,
     current: np.ndarray,
     time: np.ndarray,
-    baseline_window: float = 0.1,
-    max_baseline_std: float = 2.0,
-    max_drift: float = 5.0,
+    baseline_window: float = DEFAULT_BASELINE_DURATION_S,
+    max_baseline_std: float = MAX_BASELINE_STD_MV,
+    max_drift: float = MAX_BASELINE_DRIFT_MV,
 ) -> Dict[str, Any]:
     """
     Run quality control checks on a sweep.
@@ -74,11 +97,23 @@ def run_sweep_qc(
     }
 
 
+@tool(
+    name="check_baseline_stability",
+    description="Check if baseline period is stable (low drift and noise)",
+    parameters={
+        "type": "object",
+        "properties": {
+            "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+            "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
+        },
+        "required": ["voltage", "time"],
+    },
+)
 def check_baseline_stability(
     voltage: np.ndarray,
     time: np.ndarray,
     window_start: Optional[float] = None,
-    window_duration: float = 0.1,
+    window_duration: float = DEFAULT_BASELINE_DURATION_S,
 ) -> Dict[str, Any]:
     """
     Check baseline voltage stability.
@@ -127,7 +162,7 @@ def check_baseline_stability(
     drift = last_tenth - first_tenth
 
     # Stability criteria
-    is_stable = (std_v < 2.0) and (abs(drift) < 3.0)  # mV thresholds
+    is_stable = (std_v < MAX_BASELINE_STD_MV) and (abs(drift) < MAX_BASELINE_DRIFT_MV)
 
     return {
         "mean": float(mean_v),
@@ -137,11 +172,23 @@ def check_baseline_stability(
     }
 
 
+@tool(
+    name="measure_noise",
+    description="Measure RMS noise level in a trace",
+    parameters={
+        "type": "object",
+        "properties": {
+            "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+            "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
+        },
+        "required": ["voltage", "time"],
+    },
+)
 def measure_noise(
     voltage: np.ndarray,
     time: np.ndarray,
     window_start: Optional[float] = None,
-    window_duration: float = 0.1,
+    window_duration: float = DEFAULT_BASELINE_DURATION_S,
     high_pass_cutoff: float = 100.0,
 ) -> Dict[str, Any]:
     """
@@ -194,7 +241,7 @@ def measure_noise(
             filtered = filtfilt(b, a, window_voltage)
         else:
             filtered = window_voltage - np.mean(window_voltage)
-    except:
+    except Exception:
         filtered = window_voltage - np.mean(window_voltage)
 
     # Calculate noise metrics
@@ -202,8 +249,7 @@ def measure_noise(
     peak_to_peak = np.max(filtered) - np.min(filtered)
 
     # Estimate SNR (rough estimate based on expected AP amplitude)
-    expected_ap_amplitude = 80  # mV
-    snr = expected_ap_amplitude / rms_noise if rms_noise > 0 else None
+    snr = EXPECTED_AP_AMPLITUDE_MV / rms_noise if rms_noise > 0 else None
 
     return {
         "rms_noise": float(rms_noise),
@@ -267,7 +313,7 @@ def check_seal_resistance(
     }
 
 
-def _check_clipping(voltage: np.ndarray, threshold_fraction: float = 0.01) -> Dict[str, Any]:
+def _check_clipping(voltage: np.ndarray, threshold_fraction: float = CLIPPING_TOLERANCE) -> Dict[str, Any]:
     """Check for signal clipping (saturation)."""
     v_range = np.max(voltage) - np.min(voltage)
     
@@ -288,6 +334,21 @@ def _check_clipping(voltage: np.ndarray, threshold_fraction: float = 0.01) -> Di
     }
 
 
+@tool(
+    name="validate_nwb",
+    description=(
+        "Validate an NWB or ABF file for common data-quality issues "
+        "(NaN values, array mismatches, empty sweeps, physiological range violations). "
+        "Use this during the Discovery phase to check data integrity before analysis."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "file_path": {"type": "string", "description": "Path to the ABF or NWB file"},
+        },
+        "required": ["file_path"],
+    },
+)
 def validate_nwb(
     file_path: str,
 ) -> Dict[str, Any]:

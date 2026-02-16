@@ -22,6 +22,8 @@ import numpy as np
 
 from sciagent.data.resolver import BaseDataResolver  # noqa: F401 — also re-export
 
+from ..constants import DEFAULT_SAMPLE_RATE_HZ
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,7 +42,7 @@ class DataResolver(BaseDataResolver):
         super().__init__(
             use_cache=use_cache,
             max_cache_size=max_cache_size,
-            default_sample_rate=10_000.0,  # 10 kHz — typical patch-clamp
+            default_sample_rate=DEFAULT_SAMPLE_RATE_HZ,
         )
         # Register ABF and NWB formats
         self.register_format(".abf", self._load_ephys_file)

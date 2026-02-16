@@ -39,9 +39,23 @@ sys.modules.setdefault("sciagent", type(sys)("sciagent"))
 sys.modules.setdefault("sciagent.prompts", type(sys)("sciagent.prompts"))
 sys.modules["sciagent.prompts.base_messages"] = _bm
 
+# Import patchagent.constants (needed by system_messages via relative import)
+_const_path = _patch_src / "patchagent" / "constants.py"
+_const_spec = importlib.util.spec_from_file_location("patchagent.constants", _const_path)
+_const = importlib.util.module_from_spec(_const_spec)
+_const_spec.loader.exec_module(_const)
+# Wire up the package hierarchy so `from ..constants` works
+_pkg_pa = type(sys)("patchagent")
+_pkg_pa.__path__ = [str(_patch_src / "patchagent")]
+_pkg_pa_prompts = type(sys)("patchagent.prompts")
+_pkg_pa_prompts.__path__ = [str(_patch_src / "patchagent" / "prompts")]
+sys.modules.setdefault("patchagent", _pkg_pa)
+sys.modules.setdefault("patchagent.prompts", _pkg_pa_prompts)
+sys.modules["patchagent.constants"] = _const
+
 # Import patchagent.prompts.system_messages
 _sm_path = _patch_src / "patchagent" / "prompts" / "system_messages.py"
-_sm_spec = importlib.util.spec_from_file_location("system_messages", _sm_path)
+_sm_spec = importlib.util.spec_from_file_location("patchagent.prompts.system_messages", _sm_path)
 _sm = importlib.util.module_from_spec(_sm_spec)
 _sm_spec.loader.exec_module(_sm)
 

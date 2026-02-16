@@ -10,13 +10,27 @@ from typing import Union, Dict, Any, Optional, List, Tuple
 import numpy as np
 from scipy.optimize import curve_fit
 
-# ── Re-export generic fits from sciagent ────────────────────────────────
+from sciagent.tools.registry import tool
+
+# ── Re-export generic fits from sciagent ────────────────────────────────────────
 from sciagent.tools.fitting_tools import (  # noqa: F401
     fit_exponential,
     fit_double_exponential,
 )
 
 
+@tool(
+    name="fit_iv_curve",
+    description="Fit IV curve to extract conductance and reversal potential",
+    parameters={
+        "type": "object",
+        "properties": {
+            "currents": {"type": "array", "items": {"type": "number"}, "description": "Current values in pA"},
+            "voltages": {"type": "array", "items": {"type": "number"}, "description": "Voltage values in mV"},
+        },
+        "required": ["currents", "voltages"],
+    },
+)
 def fit_iv_curve(
     voltages: np.ndarray,
     currents: np.ndarray,
@@ -121,9 +135,21 @@ def fit_iv_curve(
         }
 
     else:
-        raise ValueError(f"Unknown fit_type: {fit_type}")
+        return {"error": f"Unknown fit_type: {fit_type}"}
 
 
+@tool(
+    name="fit_fi_curve",
+    description="Fit f-I curve to extract gain and rheobase",
+    parameters={
+        "type": "object",
+        "properties": {
+            "currents": {"type": "array", "items": {"type": "number"}, "description": "Current steps in pA"},
+            "firing_rates": {"type": "array", "items": {"type": "number"}, "description": "Firing rates in Hz"},
+        },
+        "required": ["currents", "firing_rates"],
+    },
+)
 def fit_fi_curve(
     currents: np.ndarray,
     firing_rates: np.ndarray,
@@ -268,7 +294,7 @@ def fit_fi_curve(
             }
 
     else:
-        raise ValueError(f"Unknown fit_type: {fit_type}")
+        return {"error": f"Unknown fit_type: {fit_type}"}
 
 
 

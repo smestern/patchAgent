@@ -50,10 +50,10 @@ def main(file_path: str):
     vrest = calculate_resting_potential(v, t)
 
     print(f"\n=== Passive Properties ===")
-    print(f"  Input resistance: {rm.get('input_resistance_MOhm', 'N/A')} MOhm")
-    print(f"  Time constant:    {tau.get('tau_ms', 'N/A')} ms")
+    print(f"  Input resistance: {rm.get('input_resistance', 'N/A')} MOhm")
+    print(f"  Time constant:    {tau.get('tau', 'N/A')} ms")
     print(f"  Sag ratio:        {sag.get('sag_ratio', 'N/A')}")
-    print(f"  Resting Vm:       {vrest.get('resting_potential_mV', 'N/A')} mV")
+    print(f"  Resting Vm:       {vrest.get('resting_potential', 'N/A')} mV")
 
 
 if __name__ == "__main__":

@@ -17,6 +17,8 @@ Only domain-specific sections are defined here:
 
 from sciagent.prompts.base_messages import build_system_message
 
+from ..constants import bounds_as_markdown_table
+
 # ====================================================================
 # A. Identity
 # ====================================================================
@@ -45,10 +47,15 @@ Before ANY analysis you MUST:
 2. Plot the current/voltage command for the first 5 sweeps.
 3. Identify **all** stimulus periods — start times, durations, amplitudes.
 4. Check whether the structure varies across sweeps.
-5. **Present the structure to the user and wait for confirmation.**
+5. **Cross-check at least 2–3 files AND multiple sweeps per file**
+   (e.g. first, middle, last sweeps) to confirm the protocol structure is
+   consistent. Do NOT assume all files share the same layout based on a
+   single file or a single sweep — protocols, sampling rates, and sweep
+   counts can differ between cells/recordings.
+6. **Present the structure to the user and wait for confirmation.**
 
 Example output:
-> "Protocol structure detected:
+> "Protocol structure detected (verified across 3 files, sweeps 0/5/10):
 >  - Baseline: 0–0.2 s
 >  - Pulse 1: 0.2–0.5 s (constant −20 pA across all sweeps)
 >  - Pulse 2: 0.5–1.2 s (varies 0–100 pA across sweeps)
@@ -71,6 +78,9 @@ Only after user confirms phases 1 and 2:
 
 ### Critical Rules
 - ❌ NEVER skip Phase 1, even if the protocol seems "obvious".
+- ❌ NEVER assume data structure from only one file or one sweep — always
+  spot-check **multiple files** (≥2) and **multiple sweeps** (first, middle,
+  last) to catch differences in protocol, sampling rate, or sweep count.
 - ❌ NEVER analyse all files before validating one sweep.
 - ❌ NEVER ignore sanity-check warnings.
 - ✅ ALWAYS show intermediate results for user validation.
@@ -127,11 +137,9 @@ from ipfx.feature_extractor import SpikeFeatureExtractor
 Do NOT use `from analysis.spike_detection import ...` — that module does not exist.
 
 ### Documentation Access
-Use `read_doc(name)` to access detailed reference documentation:
-- **"IPFX"** — Full IPFX API with code examples and parameter tables
-- **"Tools"** — Complete tool API reference with return schemas
-- **"Operations"** — Standard workflows, default parameters, reporting standards
-- **"Protocol"** — Protocol YAML system and template reference
+Use `read_doc(name)` to access detailed reference documentation.
+Call `read_doc("list")` to see all available documents.
+{docs_summary}
 """
 
 # ====================================================================
@@ -192,7 +200,7 @@ If both pynwb and the h5py fallback fail, report errors from each attempt.
 # F. Sanity checks (domain-specific physiological bounds)
 # ====================================================================
 
-SANITY_CHECKS = """\
+SANITY_CHECKS = f"""\
 ## MANDATORY SANITY CHECKS
 
 After calculating **ANY** electrophysiology measurement, automatically check
@@ -200,18 +208,7 @@ whether it falls within physiologically plausible bounds. Use the built-in
 `check_physiological_bounds(value, parameter_name)` tool or check manually
 against the ranges below.
 
-| Parameter | Typical Range | Units |
-|-----------|---------------|-------|
-| Membrane capacitance | 5–500 | pF |
-| Input resistance | 10–2000 | MΩ |
-| Time constant | 1–200 | ms |
-| Resting potential | −100 to −30 | mV |
-| Access resistance | 1–40 | MΩ |
-| Spike threshold | −60 to −10 | mV |
-| AP amplitude | 30–140 | mV |
-| Spike width | 0.1–5 | ms |
-| Rheobase | 0–2000 | pA |
-| Max firing rate | 0–500 | Hz |
+{bounds_as_markdown_table()}
 
 **If a value is outside these bounds, STOP and show the user before continuing.**
 Do not silently proceed with implausible values — they likely indicate an
@@ -226,7 +223,7 @@ analysis error (wrong window, wrong sweep, unit mismatch, etc.).
 PATCH_ANALYST_SYSTEM_MESSAGE = build_system_message(
     PATCH_IDENTITY,
     MANDATORY_ANALYSIS_WORKFLOW,
-    TOOL_POLICY,
+    TOOL_POLICY.replace("{docs_summary}", ""),
     IPFX_QUICK_REF,
     DATA_FORMATS,
     SANITY_CHECKS,
@@ -239,16 +236,25 @@ def build_patch_system_message(extra_sections: list[str] | None = None) -> str:
     This is used by ``PatchAgent._get_system_message()`` to inject
     dynamically-loaded protocol definitions into the prompt.
 
+    The ``{docs_summary}`` placeholder in TOOL_POLICY is replaced at
+    build time with an auto-generated list from the docs/ directory.
+
     Parameters
     ----------
     extra_sections : list[str], optional
         Additional text sections (e.g. loaded protocol descriptions)
         to append after the standard domain sections.
     """
+    from sciagent.tools.doc_tools import summarize_available_docs
+
+    # Auto-generate the docs catalogue from the docs/ directory
+    docs_snippet = summarize_available_docs()
+    tool_policy_rendered = TOOL_POLICY.replace("{docs_summary}", docs_snippet)
+
     sections = [
         PATCH_IDENTITY,
         MANDATORY_ANALYSIS_WORKFLOW,
-        TOOL_POLICY,
+        tool_policy_rendered,
         IPFX_QUICK_REF,
         DATA_FORMATS,
         SANITY_CHECKS,

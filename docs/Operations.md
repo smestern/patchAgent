@@ -6,37 +6,19 @@ This document defines the standard operating procedures for the patchAgent. It g
 
 ## ⚠️ SCIENTIFIC RIGOR POLICY (MANDATORY)
 
-**These principles are non-negotiable and apply to ALL operations.**
+> **Canonical source:** The rigor rules injected into the LLM system prompt
+> live in `src/patchagent/prompts/system_messages.py` (`INCREMENTAL_ANALYSIS`
+> and `TOOL_POLICY`).  Physiological bounds are defined once in
+> `src/patchagent/constants.py` and auto-rendered into the prompt.
+>
+> The summary below is kept for **developer reference only** — if the two
+> diverge, `system_messages.py` + `constants.py` are authoritative.
 
-### 1. NO SYNTHETIC DATA
-- **NEVER** generate fake, synthetic, or simulated data for any purpose
-- **NEVER** create dummy data to fill gaps or pass tests
-- If data is missing or corrupted, report this honestly - do not fabricate
-- The only exception is clearly-labeled test fixtures for unit testing the code itself
-
-### 2. NO HYPOTHESIS CONFIRMATION BIAS
-- **NEVER** adjust methods, parameters, or thresholds to confirm a user's hypothesis
-- **NEVER** cherry-pick sweeps, cells, or results to support a desired outcome
-- Report what the data shows, even if it contradicts expectations
-- Negative and null results are scientifically valuable - report them
-
-### 3. MANDATORY SANITY CHECKS
-All analyses must include validation:
-- Check inputs for NaN, Inf, empty arrays, zero variance
-- Verify results are physiologically plausible
-- Flag values outside expected ranges (don't hide them)
-- Question results that seem "too perfect"
-
-### 4. TRANSPARENT REPORTING
-- Report ALL results, including inconvenient findings
-- Document exclusions: what was excluded, why, and how many
-- Report uncertainty (SD, SEM, CI) with all measurements
-- State N for all measurements
-
-### 5. REPRODUCIBILITY
-- All code must be deterministic
-- Document exact parameters, thresholds, and methods
-- If random processes used, set and document seeds
+1. **No synthetic data** — never fabricate or simulate data.
+2. **No confirmation bias** — never adjust methods to confirm a hypothesis.
+3. **Mandatory sanity checks** — validate inputs and outputs against known physiological bounds.
+4. **Transparent reporting** — report all results, exclusions, and uncertainties.
+5. **Reproducibility** — all code must be deterministic; document parameters and seeds.
 
 ---
 

@@ -7,7 +7,23 @@ Wraps IPFX spike detection and feature extraction functionality.
 from typing import Union, Dict, Any, List, Optional
 import numpy as np
 
+from sciagent.tools.registry import tool
 
+
+@tool(
+    name="detect_spikes",
+    description="Detect action potentials in a voltage trace using dV/dt threshold",
+    parameters={
+        "type": "object",
+        "properties": {
+            "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+            "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
+            "dv_cutoff": {"type": "number", "description": "dV/dt threshold in mV/ms (default: 20)"},
+            "min_peak": {"type": "number", "description": "Minimum peak voltage in mV (default: -30)"},
+        },
+        "required": ["voltage", "time"],
+    },
+)
 def detect_spikes(
     voltage: np.ndarray,
     time: np.ndarray,
@@ -76,13 +92,24 @@ def detect_spikes(
     return {
         "spike_count": len(spike_indices),
         "spike_times": spike_times,
-        "spike_indices": peak_indices,
-        "peak_indices": peak_indices, #alt keys as the llm might expect "peak_indices" instead of "spike_indices"
-        "peak_index": peak_indices,
+        "spike_indices": spike_indices,
+        "peak_indices": peak_indices,
         "threshold_indices": spike_indices,
     }
 
 
+@tool(
+    name="extract_spike_features",
+    description="Extract features from detected spikes (threshold, amplitude, width, kinetics)",
+    parameters={
+        "type": "object",
+        "properties": {
+            "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+            "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
+        },
+        "required": ["voltage", "time"],
+    },
+)
 def extract_spike_features(
     voltage: np.ndarray,
     time: np.ndarray,
@@ -164,6 +191,18 @@ def extract_spike_features(
     }
 
 
+@tool(
+    name="extract_spike_train_features",
+    description="Extract spike train features (firing rate, adaptation, ISI statistics)",
+    parameters={
+        "type": "object",
+        "properties": {
+            "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+            "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
+        },
+        "required": ["voltage", "time"],
+    },
+)
 def extract_spike_train_features(
     voltage: np.ndarray,
     time: np.ndarray,

@@ -1,3 +1,0 @@
-[console_scripts]
-patchagent = patchagent.cli:app
-patchagent-web = patchagent.web.app:main

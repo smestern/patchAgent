@@ -25,6 +25,7 @@ from rich.panel import Panel
 from sciagent.cli import ScientificCLI, run_cli
 from patchagent.agent import create_agent
 from patchagent.config import PATCH_CONFIG
+from patchagent.constants import DEFAULT_MODEL, DEFAULT_WEB_PORT
 
 logger = logging.getLogger(__name__)
 
@@ -73,21 +74,20 @@ class PatchCLI(ScientificCLI):
         ]
 
     async def _cmd_load(self):
-        console.print("Usage: /load <path>", style="yellow")
+        console.print(
+            "Tip: just type a message like 'load cell_001.abf' — the agent "
+            "will call the load_file tool for you.",
+            style="yellow",
+        )
 
     async def _cmd_sweeps(self):
         if self._session:
             await self._stream_and_print("List all sweeps in the currently loaded file")
+        else:
+            console.print("No active session — send a message first.", style="yellow")
 
     async def run(self):
-        """Override to handle /load and pre-load file."""
-        # Patch the REPL to intercept /load <path>
-        _orig_all_commands = self._all_commands
-
-        def _patched_all_commands():
-            return _orig_all_commands()
-
-        self._all_commands = _patched_all_commands
+        """Override to add domain-specific startup."""
         await super().run()
 
 
@@ -102,7 +102,7 @@ def chat(
         help="Path to an ABF or NWB file to load at startup.",
     ),
     model: str = typer.Option(
-        "GPT-5.3-Codex", "--model", "-m",
+        DEFAULT_MODEL, "--model", "-m",
         help="LLM model name (e.g. gpt-4.1, claude-sonnet-4).",
     ),
     output_dir: Optional[str] = typer.Option(
@@ -146,7 +146,7 @@ def chat(
 
 @app.command()
 def web(
-    port: int = typer.Option(8080, "--port", "-p", help="Port to listen on."),
+    port: int = typer.Option(DEFAULT_WEB_PORT, "--port", "-p", help="Port to listen on."),
     host: str = typer.Option("127.0.0.1", "--host", help="Host to bind to."),
     debug: bool = typer.Option(False, "--debug", help="Enable debug mode with auto-reload."),
 ) -> None:

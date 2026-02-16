@@ -8,7 +8,22 @@ from typing import Union, Dict, Any, Optional, Tuple
 import numpy as np
 from scipy.optimize import curve_fit
 
+from sciagent.tools.registry import tool
 
+
+@tool(
+    name="calculate_input_resistance",
+    description="Calculate input resistance from a hyperpolarizing current step (Rm = ΔV/ΔI)",
+    parameters={
+        "type": "object",
+        "properties": {
+            "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+            "current": {"type": "array", "items": {"type": "number"}, "description": "Current command in pA"},
+            "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
+        },
+        "required": ["voltage", "current", "time"],
+    },
+)
 def calculate_input_resistance(
     voltage: np.ndarray,
     current: np.ndarray,
@@ -94,6 +109,19 @@ def calculate_input_resistance(
     }
 
 
+@tool(
+    name="calculate_time_constant",
+    description="Fit membrane time constant (tau) from voltage response to current step",
+    parameters={
+        "type": "object",
+        "properties": {
+            "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+            "current": {"type": "array", "items": {"type": "number"}, "description": "Current command in pA"},
+            "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
+        },
+        "required": ["voltage", "current", "time"],
+    },
+)
 def calculate_time_constant(
     voltage: np.ndarray,
     current: np.ndarray,
@@ -190,6 +218,19 @@ def calculate_time_constant(
         }
 
 
+@tool(
+    name="calculate_sag",
+    description="Calculate sag ratio from hyperpolarizing step (Ih indicator)",
+    parameters={
+        "type": "object",
+        "properties": {
+            "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+            "current": {"type": "array", "items": {"type": "number"}, "description": "Current command in pA"},
+            "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
+        },
+        "required": ["voltage", "current", "time"],
+    },
+)
 def calculate_sag(
     voltage: np.ndarray,
     current: np.ndarray,
@@ -277,6 +318,18 @@ def calculate_sag(
     }
 
 
+@tool(
+    name="calculate_resting_potential",
+    description="Calculate resting membrane potential from baseline period",
+    parameters={
+        "type": "object",
+        "properties": {
+            "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
+            "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
+        },
+        "required": ["voltage", "time"],
+    },
+)
 def calculate_resting_potential(
     voltage: np.ndarray,
     time: np.ndarray,
@@ -324,7 +377,7 @@ def calculate_resting_potential(
         mode_idx = np.argmax(hist)
         resting_potential = (bin_edges[mode_idx] + bin_edges[mode_idx + 1]) / 2
     else:
-        raise ValueError(f"Unknown method: {method}")
+        return {"error": f"Unknown method: {method}"}
 
     return {
         "resting_potential": float(resting_potential),

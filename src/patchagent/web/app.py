@@ -18,6 +18,7 @@ from pathlib import Path
 from sciagent.web.app import create_app as _create_app
 from patchagent.agent import create_agent
 from patchagent.config import PATCH_CONFIG
+from patchagent.constants import DEFAULT_WEB_PORT
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ def create_app():
 
 def main():
     """Run the Quart server (used by ``patchagent-web`` console script)."""
-    port = int(os.environ.get("PORT", "8080"))
+    port = int(os.environ.get("PORT", str(DEFAULT_WEB_PORT)))
     host = os.environ.get("HOST", "0.0.0.0")
     debug = os.environ.get("PATCHAGENT_DEBUG", "").lower() in ("1", "true", "yes")
 

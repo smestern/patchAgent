@@ -9,25 +9,11 @@ from pathlib import Path
 
 from sciagent.config import AgentConfig, SuggestionChip
 
+from .constants import DEFAULT_MODEL, PHYSIOLOGICAL_BOUNDS  # noqa: F401 — re-export
+
 # Resolve docs directory relative to the patchAgent package root
 _PACKAGE_ROOT = Path(__file__).resolve().parent.parent.parent
 _DOCS_DIR = _PACKAGE_ROOT / "docs"
-
-# Physiological bounds for patch-clamp parameters
-PHYSIOLOGICAL_BOUNDS = {
-    "input_resistance_MOhm": (10, 2000),
-    "membrane_time_constant_ms": (1, 200),
-    "resting_potential_mV": (-100, -30),
-    "sag_ratio": (0, 1),
-    "capacitance_pF": (5, 200),
-    "access_resistance_MOhm": (1, 40),
-    "spike_threshold_mV": (-60, -10),
-    "spike_amplitude_mV": (30, 140),
-    "spike_width_ms": (0.1, 5),
-    "rheobase_pA": (0, 2000),
-    "max_firing_rate_Hz": (0, 500),
-    "adaptation_ratio": (0, 2),
-}
 
 # Forbidden code patterns (patch-clamp-specific additions)
 PATCH_FORBIDDEN_PATTERNS = [
@@ -62,13 +48,13 @@ PATCH_CONFIG = AgentConfig(
     bounds=PHYSIOLOGICAL_BOUNDS,
     forbidden_patterns=PATCH_FORBIDDEN_PATTERNS,
     warning_patterns=PATCH_WARNING_PATTERNS,
-    extra_libraries=[
-        "ipfx",
-        "pyabf",
-        "pynwb",
-        "h5py",
-    ],
-    model="GPT-5.3-Codex",
+    extra_libraries={
+        "ipfx": "ipfx",
+        "pyabf": "pyabf",
+        "pynwb": "pynwb",
+        "h5py": "h5py",
+    },
+    model=DEFAULT_MODEL,
     output_dir="patchagent_output",
     docs_dir=str(_DOCS_DIR),
 )

@@ -8,7 +8,20 @@ from typing import Union, Dict, Any, List, Optional
 from pathlib import Path
 import numpy as np
 
+from sciagent.tools.registry import tool
 
+
+@tool(
+    name="load_file",
+    description="Load an ABF or NWB electrophysiology file. Returns time, voltage, and current arrays.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "file_path": {"type": "string", "description": "Path to the ABF or NWB file"},
+        },
+        "required": ["file_path"],
+    },
+)
 def load_file(
     file_path: str,
     return_metadata: bool = False,
@@ -77,6 +90,17 @@ def load_file(
     return result
 
 
+@tool(
+    name="get_file_metadata",
+    description="Get metadata from an electrophysiology file (sweep count, sample rate, protocol, etc.)",
+    parameters={
+        "type": "object",
+        "properties": {
+            "file_path": {"type": "string", "description": "Path to the file"},
+        },
+        "required": ["file_path"],
+    },
+)
 def get_file_metadata(file_path: str) -> Dict[str, Any]:
     """
     Get metadata from an electrophysiology file.
@@ -94,51 +118,66 @@ def get_file_metadata(file_path: str) -> Dict[str, Any]:
             - channel_count: Number of channels
             - units: Dict with response and command units
     """
-    import pyabf
+    try:
+        import pyabf
 
-    if file_path.endswith(".abf"):
-        abf = pyabf.ABF(file_path, loadData=False)
-        return {
-            "file_type": "abf",
-            "file_id": abf.abfID,
-            "sweep_count": abf.sweepCount,
-            "sample_rate": abf.dataRate,
-            "protocol": abf.protocol,
-            "sweep_length_sec": abf.sweepLengthSec,
-            "channel_count": abf.channelCount,
-            "units": {
-                "response": abf.sweepLabelY,
-                "command": abf.sweepLabelC,
-                "time": abf.sweepLabelX,
-            },
-            "clamp_mode": _infer_clamp_mode(abf.sweepLabelY),
-        }
-    elif file_path.endswith(".nwb"):
-        # NWB metadata extraction
-        from ..loadFile import loadNWB
+        if file_path.endswith(".abf"):
+            abf = pyabf.ABF(file_path, loadData=False)
+            return {
+                "file_type": "abf",
+                "file_id": abf.abfID,
+                "sweep_count": abf.sweepCount,
+                "sample_rate": abf.dataRate,
+                "protocol": abf.protocol,
+                "sweep_length_sec": abf.sweepLengthSec,
+                "channel_count": abf.channelCount,
+                "units": {
+                    "response": abf.sweepLabelY,
+                    "command": abf.sweepLabelC,
+                    "time": abf.sweepLabelX,
+                },
+                "clamp_mode": _infer_clamp_mode(abf.sweepLabelY),
+            }
+        elif file_path.endswith(".nwb"):
+            # NWB metadata extraction
+            from ..loadFile import loadNWB
 
-        _, _, _, nwb = loadNWB(file_path, return_obj=True)
-        return {
-            "file_type": "nwb",
-            "sweep_count": nwb.sweepCount,
-            "sample_rate": nwb.rate.get("rate", None),
-            "protocol": getattr(nwb, "protocol", "unknown"),
-            "clamp_mode": getattr(nwb, "clamp_mode", "unknown"),
-            "sweep_length_sec": (
-                float(nwb.dataX[0, -1]) if nwb.dataX.size > 0 else None
-            ),
-            "protocols": getattr(nwb, "protocols", []),
-            "units": {
-                "response": nwb.sweepYVars if isinstance(nwb.sweepYVars, dict) else {},
-                "command": nwb.sweepCVars if isinstance(nwb.sweepCVars, dict) else {},
-            },
-            "session_description": getattr(nwb, "session_description", ""),
-            "electrode_info": getattr(nwb, "electrode_info", {}),
-        }
-    else:
-        raise ValueError(f"Unsupported file type: {file_path}")
+            _, _, _, nwb = loadNWB(file_path, return_obj=True)
+            return {
+                "file_type": "nwb",
+                "sweep_count": nwb.sweepCount,
+                "sample_rate": nwb.rate.get("rate", None),
+                "protocol": getattr(nwb, "protocol", "unknown"),
+                "clamp_mode": getattr(nwb, "clamp_mode", "unknown"),
+                "sweep_length_sec": (
+                    float(nwb.dataX[0, -1]) if nwb.dataX.size > 0 else None
+                ),
+                "protocols": getattr(nwb, "protocols", []),
+                "units": {
+                    "response": nwb.sweepYVars if isinstance(nwb.sweepYVars, dict) else {},
+                    "command": nwb.sweepCVars if isinstance(nwb.sweepCVars, dict) else {},
+                },
+                "session_description": getattr(nwb, "session_description", ""),
+                "electrode_info": getattr(nwb, "electrode_info", {}),
+            }
+        else:
+            return {"error": f"Unsupported file type: {file_path}"}
+    except Exception as exc:
+        return {"error": f"Failed to read metadata: {exc}"}
 
 
+@tool(
+    name="get_sweep_data",
+    description="Get voltage/current data for a specific sweep",
+    parameters={
+        "type": "object",
+        "properties": {
+            "data": {"type": "string", "description": "File path or pre-loaded data dict"},
+            "sweep_number": {"type": "integer", "description": "Sweep index (0-based)"},
+        },
+        "required": ["data", "sweep_number"],
+    },
+)
 def get_sweep_data(
     data: Union[str, Dict[str, Any]],
     sweep_number: int,
@@ -161,19 +200,22 @@ def get_sweep_data(
     from ..utils.data_resolver import resolve_data
 
     # Resolve data if needed
-    if isinstance(data, str):
-        dataX, dataY, dataC, _ = resolve_data(data)
-    elif isinstance(data, dict):
-        dataX = data["dataX"]
-        dataY = data["dataY"]
-        dataC = data["dataC"]
-    else:
-        raise TypeError(f"Unsupported data type: {type(data)}")
+    try:
+        if isinstance(data, str):
+            dataX, dataY, dataC, _ = resolve_data(data)
+        elif isinstance(data, dict):
+            dataX = data["dataX"]
+            dataY = data["dataY"]
+            dataC = data["dataC"]
+        else:
+            return {"error": f"Unsupported data type: {type(data)}"}
+    except Exception as exc:
+        return {"error": f"Failed to resolve data: {exc}"}
 
     # Handle single sweep case
     if dataY.ndim == 1:
         if sweep_number != 0:
-            raise IndexError(f"Only sweep 0 available, requested {sweep_number}")
+            return {"error": f"Only sweep 0 available, requested {sweep_number}"}
         return {
             "time": dataX,
             "voltage": dataY,
@@ -184,7 +226,7 @@ def get_sweep_data(
     # Multi-sweep case
     n_sweeps = dataY.shape[0]
     if sweep_number < 0 or sweep_number >= n_sweeps:
-        raise IndexError(f"Sweep {sweep_number} out of range [0, {n_sweeps})")
+        return {"error": f"Sweep {sweep_number} out of range [0, {n_sweeps})"}
 
     return {
         "time": dataX[sweep_number],
@@ -194,6 +236,17 @@ def get_sweep_data(
     }
 
 
+@tool(
+    name="list_sweeps",
+    description="List all sweeps in a file with their stimulus amplitudes",
+    parameters={
+        "type": "object",
+        "properties": {
+            "data": {"type": "string", "description": "File path or pre-loaded data dict"},
+        },
+        "required": ["data"],
+    },
+)
 def list_sweeps(
     data: Union[str, Dict[str, Any]],
 ) -> Dict[str, Any]:
@@ -212,14 +265,17 @@ def list_sweeps(
     from ..utils.data_resolver import resolve_data
 
     # Resolve data if needed
-    if isinstance(data, str):
-        dataX, dataY, dataC, _ = resolve_data(data)
-    elif isinstance(data, dict):
-        dataX = data["dataX"]
-        dataY = data["dataY"]
-        dataC = data["dataC"]
-    else:
-        raise TypeError(f"Unsupported data type: {type(data)}")
+    try:
+        if isinstance(data, str):
+            dataX, dataY, dataC, _ = resolve_data(data)
+        elif isinstance(data, dict):
+            dataX = data["dataX"]
+            dataY = data["dataY"]
+            dataC = data["dataC"]
+        else:
+            return {"error": f"Unsupported data type: {type(data)}"}
+    except Exception as exc:
+        return {"error": f"Failed to resolve data: {exc}"}
 
     # Handle single sweep
     if dataY.ndim == 1:
@@ -254,6 +310,18 @@ def list_sweeps(
     }
 
 
+@tool(
+    name="list_ephys_files",
+    description="List electrophysiology files (.abf, .nwb) in a directory",
+    parameters={
+        "type": "object",
+        "properties": {
+            "directory": {"type": "string", "description": "Directory to search. Defaults to cwd."},
+            "recursive": {"type": "boolean", "description": "Search subdirectories recursively"},
+            "file_type": {"type": "string", "description": "Filter: 'abf', 'nwb', or omit for both"},
+        },
+    },
+)
 def list_ephys_files(
     directory: Optional[str] = None,
     recursive: bool = False,
@@ -276,7 +344,7 @@ def list_ephys_files(
     target = Path(directory).expanduser().resolve() if directory else Path.cwd()
 
     if not target.is_dir():
-        raise FileNotFoundError(f"Directory not found: {target}")
+        return {"error": f"Directory not found: {target}"}
 
     extensions = []
     if file_type is None or file_type.lower() == "abf":
@@ -312,6 +380,20 @@ def _infer_clamp_mode(sweep_label_y: str) -> str:
         return "unknown"
 
 
+@tool(
+    name="list_protocols",
+    description=(
+        "Discover and list all unique protocols in a file, with sweep counts and indices. "
+        "Also attempts to match each protocol against known protocol definitions."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "file_path": {"type": "string", "description": "Path to the ABF or NWB file"},
+        },
+        "required": ["file_path"],
+    },
+)
 def list_protocols(
     file_path: str,
 ) -> Dict[str, Any]:
