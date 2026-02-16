@@ -120,8 +120,8 @@ This document defines the sub-agents available in patchAgent. Each agent is spec
 
 To add a custom agent:
 
-1. Define the agent configuration in `src/patch_agent/agent.py`
-2. Create a system message in `src/patch_agent/prompts/system_messages.py`
+1. Define the agent configuration in `src/patchagent/agent.py`
+2. Create a system message in `src/patchagent/prompts/system_messages.py`
 3. Document the agent in this file
 
 ```python

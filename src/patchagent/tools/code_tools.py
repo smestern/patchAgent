@@ -147,7 +147,7 @@ def check_scientific_rigor(code: str) -> Dict[str, Any]:
 
 
 # =====================================================================
-# Domain-specific: execution environment with ipfx + patch_agent tools
+# Domain-specific: execution environment with ipfx + patchagent tools
 # =====================================================================
 
 # Libraries available in the sandbox
@@ -219,7 +219,7 @@ def get_execution_environment(
     except ImportError:
         pass
 
-    # ── patch_agent loaders ─────────────────────────────────────────
+    # ── patchagent loaders ─────────────────────────────────────────
     try:
         from ..loadFile import loadFile, loadABF, loadNWB, NWBRecording
         env["loadFile"] = loadFile
@@ -526,7 +526,7 @@ def spectral_analysis(trace, sample_rate):
 Loads a file, detects spikes in each sweep, builds a frequency-current
 (f-I) curve, and fits it to extract gain and rheobase.
 """
-from patch_agent.tools import load_file, list_sweeps, detect_spikes, fit_fi_curve
+from patchagent.tools import load_file, list_sweeps, detect_spikes, fit_fi_curve
 
 # 1. Load file
 data = load_file(file_path)
@@ -567,7 +567,7 @@ print(f"Rheobase: {fi_result.get('rheobase', 'N/A')} pA")
 Selects hyperpolarizing sweeps and calculates input resistance,
 membrane time constant, sag ratio, and resting potential.
 """
-from patch_agent.tools import (
+from patchagent.tools import (
     load_file, list_sweeps, calculate_input_resistance,
     calculate_time_constant, calculate_sag, calculate_resting_potential,
 )
@@ -610,7 +610,7 @@ else:
 Detects spikes, extracts single-spike features (threshold, amplitude,
 width, rise/fall kinetics), and spike train features (adaptation, ISI).
 """
-from patch_agent.tools import (
+from patchagent.tools import (
     load_file, list_sweeps, detect_spikes,
     extract_spike_features, extract_spike_train_features,
 )

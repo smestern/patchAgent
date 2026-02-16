@@ -7,7 +7,7 @@ Usage:
     python fi_curve_analysis.py <path_to_file>
 """
 import sys
-from patch_agent.tools import load_file, list_sweeps, detect_spikes, fit_fi_curve
+from patchagent.tools import load_file, list_sweeps, detect_spikes, fit_fi_curve
 
 
 def main(file_path: str):

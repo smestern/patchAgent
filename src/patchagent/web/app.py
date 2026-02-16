@@ -6,7 +6,7 @@ factory and domain configuration.
 
 Start with:
     patchagent-web          # uses entry point
-    python -m patch_agent.web.app   # direct
+    python -m patchagent.web.app   # direct
 """
 
 from __future__ import annotations
@@ -16,8 +16,8 @@ import os
 from pathlib import Path
 
 from sciagent.web.app import create_app as _create_app
-from patch_agent.agent import create_agent
-from patch_agent.config import PATCH_CONFIG
+from patchagent.agent import create_agent
+from patchagent.config import PATCH_CONFIG
 
 logger = logging.getLogger(__name__)
 

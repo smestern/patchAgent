@@ -117,11 +117,11 @@ You have **two ways** to use built-in tools:
 Inside `execute_code`, tools are available as bare names.
 In standalone `.py` scripts, use the correct package paths:
 ```python
-from patch_agent.tools.spike_tools import detect_spikes, extract_spike_features
-from patch_agent.tools.passive_tools import calculate_input_resistance, calculate_time_constant
-from patch_agent.tools.fitting_tools import fit_fi_curve, fit_iv_curve
-from patch_agent.tools.qc_tools import run_sweep_qc
-from patch_agent.loadFile import loadFile
+from patchagent.tools.spike_tools import detect_spikes, extract_spike_features
+from patchagent.tools.passive_tools import calculate_input_resistance, calculate_time_constant
+from patchagent.tools.fitting_tools import fit_fi_curve, fit_iv_curve
+from patchagent.tools.qc_tools import run_sweep_qc
+from patchagent.loadFile import loadFile
 from ipfx.feature_extractor import SpikeFeatureExtractor
 ```
 Do NOT use `from analysis.spike_detection import ...` — that module does not exist.

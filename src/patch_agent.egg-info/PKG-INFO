@@ -1,3 +1,41 @@
+Metadata-Version: 2.4
+Name: patch-agent
+Version: 0.1.0
+Summary: A scientific analysis agent for patch-clamp electrophysiology
+Author: Sam
+License: MIT
+Project-URL: Homepage, https://github.com/smestern/patchAgent
+Project-URL: Repository, https://github.com/smestern/patchAgent
+Keywords: electrophysiology,patch-clamp,neuroscience,analysis,agent,copilot
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: sciagent>=0.1.0
+Requires-Dist: pyabf>=2.3
+Requires-Dist: ipfx>=1.0
+Requires-Dist: pynwb>=2.5
+Requires-Dist: h5py>=3.0
+Requires-Dist: pyyaml>=6.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0; extra == "dev"
+Requires-Dist: black>=23.0; extra == "dev"
+Requires-Dist: ruff>=0.1; extra == "dev"
+Provides-Extra: cli
+Requires-Dist: sciagent[cli]; extra == "cli"
+Provides-Extra: web
+Requires-Dist: sciagent[web]; extra == "web"
+Provides-Extra: remote
+Requires-Dist: lindi; extra == "remote"
+
 # patchAgent
 
 A scientific analysis agent for patch-clamp electrophysiology, built on the [**sciagent**](https://github.com/smestern/sciagent) framework and powered by the GitHub Copilot SDK.

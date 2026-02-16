@@ -59,8 +59,8 @@ remote = [
 ]
 
 [project.scripts]
-patchagent = "patch_agent.cli:app"
-patchagent-web = "patch_agent.web.app:main"
+patchagent = "patchagent.cli:app"
+patchagent-web = "patchagent.web.app:main"
 
 [project.urls]
 Homepage = "https://github.com/smestern/patchAgent"

@@ -7,7 +7,7 @@ Usage:
     python spike_analysis.py <path_to_file>
 """
 import sys
-from patch_agent.tools import (
+from patchagent.tools import (
     load_file,
     list_sweeps,
     detect_spikes,

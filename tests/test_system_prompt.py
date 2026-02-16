@@ -39,8 +39,8 @@ sys.modules.setdefault("sciagent", type(sys)("sciagent"))
 sys.modules.setdefault("sciagent.prompts", type(sys)("sciagent.prompts"))
 sys.modules["sciagent.prompts.base_messages"] = _bm
 
-# Import patch_agent.prompts.system_messages
-_sm_path = _patch_src / "patch_agent" / "prompts" / "system_messages.py"
+# Import patchagent.prompts.system_messages
+_sm_path = _patch_src / "patchagent" / "prompts" / "system_messages.py"
 _sm_spec = importlib.util.spec_from_file_location("system_messages", _sm_path)
 _sm = importlib.util.module_from_spec(_sm_spec)
 _sm_spec.loader.exec_module(_sm)

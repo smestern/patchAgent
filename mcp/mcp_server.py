@@ -31,7 +31,7 @@ class PatchAgentMCPServer(BaseMCPServer):
 
     def _register_patch_tools(self):
         """Register all patch-clamp-specific tools."""
-        from patch_agent.tools import (
+        from patchagent.tools import (
             load_file,
             get_file_metadata,
             detect_spikes,
@@ -41,7 +41,7 @@ class PatchAgentMCPServer(BaseMCPServer):
             run_sweep_qc,
             fit_exponential,
         )
-        from patch_agent.tools.io_tools import get_sweep_data
+        from patchagent.tools.io_tools import get_sweep_data
 
         # -- Direct tools (take simple params) --------------------------------
         self.register_tool("load_file", self._wrap(load_file), {

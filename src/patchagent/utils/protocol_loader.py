@@ -46,7 +46,7 @@ def discover_protocol_dirs(extra_dir: Optional[str | Path] = None) -> list[Path]
         dirs.append(cwd_protocols)
 
     # 3. Bundled protocols (next to the repo root)
-    #    Navigate from this file → utils/ → patch_agent/ → src/ → repo root
+    #    Navigate from this file → utils/ → patchagent/ → src/ → repo root
     package_root = Path(__file__).resolve().parent.parent.parent.parent
     bundled = package_root / "protocols"
     if bundled.is_dir() and bundled not in dirs:

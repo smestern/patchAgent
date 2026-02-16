@@ -7,7 +7,7 @@ Usage:
     python passive_properties.py <path_to_file>
 """
 import sys
-from patch_agent.tools import (
+from patchagent.tools import (
     load_file,
     list_sweeps,
     calculate_input_resistance,

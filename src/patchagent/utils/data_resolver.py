@@ -54,7 +54,7 @@ class DataResolver(BaseDataResolver):
         return_obj: bool = False,
         **kwargs,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[Any]]:
-        """Load an ABF or NWB file via ``patch_agent.loadFile``."""
+        """Load an ABF or NWB file via ``patchagent.loadFile``."""
         from ..loadFile import loadFile
 
         result = loadFile(file_path, return_obj=True, **kwargs)

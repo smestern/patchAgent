@@ -23,8 +23,8 @@ from rich.console import Console
 from rich.panel import Panel
 
 from sciagent.cli import ScientificCLI, run_cli
-from patch_agent.agent import create_agent
-from patch_agent.config import PATCH_CONFIG
+from patchagent.agent import create_agent
+from patchagent.config import PATCH_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +152,7 @@ def web(
 ) -> None:
     """Launch the browser-based chat demo."""
     try:
-        from patch_agent.web.app import create_app
+        from patchagent.web.app import create_app
     except ImportError as exc:
         console.print(
             Panel(
@@ -178,7 +178,7 @@ def web(
 @app.command()
 def version() -> None:
     """Show patchAgent version."""
-    from patch_agent import __version__
+    from patchagent import __version__
     console.print(f"patchAgent v{__version__}")
 
 

@@ -15,14 +15,14 @@ import pytest
 _src = Path(__file__).resolve().parent.parent / "src"
 
 # nan_utils
-_nan_path = _src / "patch_agent" / "utils" / "nan_utils.py"
+_nan_path = _src / "patchagent" / "utils" / "nan_utils.py"
 _nan_spec = importlib.util.spec_from_file_location("nan_utils", _nan_path)
 _nan_mod = importlib.util.module_from_spec(_nan_spec)
 _nan_spec.loader.exec_module(_nan_mod)
 clean_nans = _nan_mod.clean_nans
 
 # protocol_loader (for alt_names matching tests)
-_pl_path = _src / "patch_agent" / "utils" / "protocol_loader.py"
+_pl_path = _src / "patchagent" / "utils" / "protocol_loader.py"
 _pl_spec = importlib.util.spec_from_file_location("protocol_loader", _pl_path)
 _pl_mod = importlib.util.module_from_spec(_pl_spec)
 _pl_spec.loader.exec_module(_pl_mod)
@@ -249,7 +249,7 @@ class TestCodeSnippets:
 
     def test_example_snippets_exist(self):
         # Import CODE_SNIPPETS directly
-        _ct_path = _src / "patch_agent" / "tools" / "code_tools.py"
+        _ct_path = _src / "patchagent" / "tools" / "code_tools.py"
         _ct_spec = importlib.util.spec_from_file_location(
             "code_tools_test", _ct_path,
             submodule_search_locations=[],

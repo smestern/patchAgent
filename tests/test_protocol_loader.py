@@ -12,9 +12,9 @@ from pathlib import Path
 import pytest
 
 # Import the protocol_loader module directly to avoid pulling in the full
-# patch_agent package (which requires pyabf, ipfx, etc.).
+# patchagent package (which requires pyabf, ipfx, etc.).
 _src = Path(__file__).resolve().parent.parent / "src"
-_mod_path = _src / "patch_agent" / "utils" / "protocol_loader.py"
+_mod_path = _src / "patchagent" / "utils" / "protocol_loader.py"
 _spec = importlib.util.spec_from_file_location("protocol_loader", _mod_path)
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)

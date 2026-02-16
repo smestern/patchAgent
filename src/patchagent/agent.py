@@ -12,7 +12,7 @@ from typing import Optional, List
 from sciagent import BaseScientificAgent
 from sciagent.config import AgentConfig
 
-from patch_agent.config import PATCH_CONFIG
+from patchagent.config import PATCH_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ class PatchAgent(BaseScientificAgent):
             fit_exponential,
             fit_iv_curve,
             fit_fi_curve,
-            # Code tools (from sciagent, re-exported by patch_agent.tools)
+            # Code tools (from sciagent, re-exported by patchagent.tools)
             execute_code,
             run_custom_analysis,
             validate_code,
@@ -480,7 +480,7 @@ class PatchAgent(BaseScientificAgent):
         """Provide patch-clamp libraries to the code sandbox."""
         env = {}
         try:
-            from patch_agent.loadFile import loadFile
+            from patchagent.loadFile import loadFile
             env["loadFile"] = loadFile
         except ImportError:
             pass
