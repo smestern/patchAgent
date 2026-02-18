@@ -267,3 +267,39 @@ class TestCodeSnippets:
         assert (examples_dir / "fi_curve_analysis.py").is_file()
         assert (examples_dir / "passive_properties.py").is_file()
         assert (examples_dir / "spike_analysis.py").is_file()
+
+
+# ── Schema-drift / tool-registration tests ──────────────────────────
+
+
+class TestToolSchemas:
+    """Verify @tool schemas match function signatures and no duplicates."""
+
+    def test_no_schema_signature_mismatches(self):
+        """Every required schema param must exist in the function signature,
+        and every required function param must appear in the schema."""
+        from sciagent.tools.registry import verify_tool_schemas
+        from patchagent.tools import (
+            io_tools, spike_tools, passive_tools,
+            qc_tools, fitting_tools, code_tools,
+        )
+        errors = verify_tool_schemas(
+            io_tools, spike_tools, passive_tools,
+            qc_tools, fitting_tools, code_tools,
+        )
+        assert not errors, "Schema/signature mismatches:\n" + "\n".join(errors)
+
+    def test_no_duplicate_tool_names(self):
+        """collect_tools across all modules should not yield duplicate names."""
+        from sciagent.tools.registry import collect_tools
+        from patchagent.tools import (
+            io_tools, spike_tools, passive_tools,
+            qc_tools, fitting_tools, code_tools,
+        )
+        names: list[str] = []
+        for mod in [io_tools, spike_tools, passive_tools,
+                     qc_tools, fitting_tools, code_tools]:
+            for name, _desc, _handler, _params in collect_tools(mod):
+                names.append(name)
+        duplicates = [n for n in names if names.count(n) > 1]
+        assert not duplicates, f"Duplicate tool names: {set(duplicates)}"

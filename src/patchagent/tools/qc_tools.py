@@ -25,10 +25,10 @@ from ..constants import (
         "type": "object",
         "properties": {
             "voltage": {"type": "array", "items": {"type": "number"}, "description": "Voltage trace in mV"},
-            "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
             "current": {"type": "array", "items": {"type": "number"}, "description": "Current command in pA"},
+            "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
         },
-        "required": ["voltage", "time"],
+        "required": ["voltage", "current", "time"],
     },
 )
 def run_sweep_qc(

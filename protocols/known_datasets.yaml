@@ -9,6 +9,7 @@
 # Structure:
 #   datasets:
 #     <dataset_key>:
+#       name: Human readable name of the dataset
 #       description: Short description of the dataset
 #       source: Where the data comes from
 #       long_square_variants: list of stimulus_description strings
@@ -21,6 +22,7 @@
 datasets:
 
   DANDI_000020:
+    name: "Allen Institute Patch-seq — visual cortex mouse neurons"
     description: "Allen Institute Patch-seq — visual cortex mouse neurons"
     source: "https://dandiarchive.org/dandiset/000020"
     long_square_variants:
@@ -46,6 +48,7 @@ datasets:
       protocol YAML files.
 
   DANDI_000023:
+    name: "Allen Institute — human cortical neurons"
     description: "Allen Institute — human cortical neurons"
     source: "https://dandiarchive.org/dandiset/000023"
     long_square_variants:
@@ -62,6 +65,7 @@ datasets:
     typical_baseline: 0.5
 
   DANDI_000035:
+    name: "Allen Institute — mouse cortical neurons (Bhatt lab)"
     description: "Allen Institute — mouse cortical neurons (Bhatt lab)"
     source: "https://dandiarchive.org/dandiset/000035"
     long_square_variants:
@@ -74,6 +78,7 @@ datasets:
     typical_baseline: 0.5
 
   ABF_GENERIC:
+    name: "Generic ABF Protocols"
     description: "Generic ABF files from various rigs"
     source: "Local recordings"
     long_square_variants:

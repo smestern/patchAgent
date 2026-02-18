@@ -61,64 +61,29 @@ class PatchAgent(BaseScientificAgent):
 
         from .tools import io_tools, spike_tools, passive_tools, qc_tools, fitting_tools, code_tools
 
-        # Re-exported sciagent tools that don't have @tool metadata on them
-        # are registered manually; everything else is auto-collected.
-        from .tools import (
-            execute_code,
-            validate_code,
-            validate_data_integrity,
-            check_physiological_bounds,
-            fit_exponential,
-            fit_double_exponential,
-        )
+        # check_physiological_bounds is a plain function (no @tool decorator)
+        # so it must be registered manually.  All other re-exported sciagent
+        # functions already carry _tool_meta from their @tool decorators and
+        # are auto-discovered by collect_tools — do NOT register them twice.
+        from .tools import check_physiological_bounds
 
         tools = []
+        seen_names: set[str] = set()
 
         # ── Auto-collect from decorated modules ─────────────────────
         for module in [io_tools, spike_tools, passive_tools, qc_tools, fitting_tools, code_tools]:
-            for name, desc, handler, params in collect_tools(module):
-                tools.append(self._create_tool(name, desc, handler, params))
+            try:
+                for name, desc, handler, params in collect_tools(module):
+                    if name in seen_names:
+                        logger.debug("Skipping duplicate tool '%s'", name)
+                        continue
+                    seen_names.add(name)
+                    tools.append(self._create_tool(name, desc, handler, params))
+            except Exception:
+                logger.exception("Failed to collect tools from %s", module.__name__)
 
-        # ── Manually register re-exported sciagent tools ────────────
-        tools.extend([
-            self._create_tool(
-                "execute_code",
-                "Execute custom Python code for analysis. Code is validated for scientific rigor.",
-                execute_code,
-                {
-                    "type": "object",
-                    "properties": {
-                        "code": {"type": "string", "description": "Python code to execute"},
-                        "context": {"type": "object", "description": "Variables to make available"},
-                    },
-                    "required": ["code"],
-                },
-            ),
-            self._create_tool(
-                "validate_code",
-                "Validate Python code syntax and check for dangerous operations",
-                validate_code,
-                {
-                    "type": "object",
-                    "properties": {
-                        "code": {"type": "string", "description": "Python code to validate"},
-                    },
-                    "required": ["code"],
-                },
-            ),
-            self._create_tool(
-                "validate_data_integrity",
-                "Validate data array for integrity issues (NaN, Inf, zero variance)",
-                validate_data_integrity,
-                {
-                    "type": "object",
-                    "properties": {
-                        "data": {"type": "array", "items": {"type": "number"}, "description": "Data array to validate"},
-                        "name": {"type": "string", "description": "Name for error messages"},
-                    },
-                    "required": ["data"],
-                },
-            ),
+        # ── Manually register tools without @tool decorators ──────
+        tools.append(
             self._create_tool(
                 "check_physiological_bounds",
                 "Check if a measured value is within physiologically plausible bounds",
@@ -132,33 +97,7 @@ class PatchAgent(BaseScientificAgent):
                     "required": ["value", "parameter"],
                 },
             ),
-            self._create_tool(
-                "fit_exponential",
-                "Fit single exponential decay to data",
-                fit_exponential,
-                {
-                    "type": "object",
-                    "properties": {
-                        "y": {"type": "array", "items": {"type": "number"}, "description": "Y values to fit"},
-                        "x": {"type": "array", "items": {"type": "number"}, "description": "X values"},
-                    },
-                    "required": ["y", "x"],
-                },
-            ),
-            self._create_tool(
-                "fit_double_exponential",
-                "Fit double exponential decay to data (fast + slow components)",
-                fit_double_exponential,
-                {
-                    "type": "object",
-                    "properties": {
-                        "y": {"type": "array", "items": {"type": "number"}, "description": "Y values to fit"},
-                        "x": {"type": "array", "items": {"type": "number"}, "description": "X values"},
-                    },
-                    "required": ["y", "x"],
-                },
-            ),
-        ])
+        )
 
         logger.info("Loaded %d tools", len(tools))
         return tools

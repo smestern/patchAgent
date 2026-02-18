@@ -8,7 +8,7 @@ of hardcoding values across tools, config, and prompts.
 from __future__ import annotations
 
 # ── Model ───────────────────────────────────────────────────────────
-DEFAULT_MODEL: str = "GPT-5.3-Codex"
+DEFAULT_MODEL: str = "claude-opus-4.5"
 
 # ── Physiological bounds ────────────────────────────────────────────
 # Canonical ranges for patch-clamp parameters.

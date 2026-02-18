@@ -151,7 +151,7 @@ from patchagent import PatchAgent, create_agent
 
 async def main():
     # Create and start the agent
-    agent = create_agent(model="GPT-5.3-Codex")
+    agent = create_agent(model="claude-opus-4.5")
     await agent.start()
 
     try:
