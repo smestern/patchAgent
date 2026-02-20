@@ -20,6 +20,7 @@ from sciagent.tools.registry import tool
             "time": {"type": "array", "items": {"type": "number"}, "description": "Time array in seconds"},
             "dv_cutoff": {"type": "number", "description": "dV/dt threshold in mV/ms (default: 20)"},
             "min_peak": {"type": "number", "description": "Minimum peak voltage in mV (default: -30)"},
+            "filter_frequency": {"type": "number", "description": "Optional filter frequency in Hz for smoothing"},
         },
         "required": ["voltage", "time"],
     },
