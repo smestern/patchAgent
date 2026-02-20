@@ -1,68 +1,42 @@
 # What is PatchAgent
-*See: [What is Patch-Clamp Electrophysiology?](01-what-is-patch-clamp.md)*  
+*See: [What is Patch-Clamp Electrophysiology?](02-what-is-patch-clamp.md)*  
 
 ## The Gap
 
-In a typical electrophysiology lab:
+If you've spent any time in an electrophysiology lab, you know the workflow. You spend hours at the rig, carefully patching neurons, collecting beautiful data across dozens of sweeps. The data comes out as ABF or NWB files. And then... you have to actually analyze it.
 
-1. **The experimentalist** spends hours at the rig recording patch-clamp data from neurons — a demanding, highly skilled procedure.
-2. **The data** comes out as ABF or NWB files, each containing dozens of sweeps of voltage and current traces.
-3. **The analysis** — spike detection, passive property extraction, quality control, curve fitting — requires writing Python code using libraries like [pyABF](https://github.com/swharden/pyABF), [IPFX](https://ipfx.readthedocs.io/), NumPy, and SciPy.
-4. **The biologist** often has *limited programming experience*.
+This is where things tend to fall apart for a lot of people.
 
-Step 4 is where everything breaks down.
+The analysis side — spike detection, passive property extraction, QC, curve fitting — lives firmly in Python-land. You need [pyABF](https://github.com/swharden/pyABF), [IPFX](https://ipfx.readthedocs.io/), NumPy, SciPy, and a decent amount of coding experience to string it all together. But a huge number of electrophysiologists come from biology backgrounds. They've taken a Python course or two, can write a for loop and make a scatter plot, but the analysis side is a real bottleneck.
 
-### It's Not That Biologists Can't Code
+It's not that biologists *can't* code — it's that electrophysiology analysis is genuinely tricky, even for people who are comfortable with Python:
 
-Many bench scientists have taken a Python course or two. They can write a for loop and make a scatter plot. But electrophysiology analysis isn't beginner-friendly:
+- Spike detection needs dV/dt-based threshold crossing — not a simple `find_peaks()` call (which is a [common mistake](https://ipfx.readthedocs.io/) that misidentifies artifacts as spikes)
+- Time constant fitting requires picking the right window, choosing single vs. double exponential, and making sure the fit is actually good
+- f-I curves require combining data across many sweeps, correctly mapping stimulus amplitudes to firing rates
+- Quality control is a judgment call — experienced analysts just *know* when data looks wrong, but encoding that in code is nontrivial
 
-- **Spike detection** needs dV/dt-based threshold crossing — not a simple `find_peaks()` call (which is a [common mistake](https://ipfx.readthedocs.io/) that misidentifies artifacts as spikes).
-- **Time constant fitting** requires selecting the right window, choosing single vs. double exponential, and validating the fit quality.
-- **f-I curves** require combining data across many sweeps, correctly mapping stimulus amplitudes to firing rates.
-- **Quality control** is a judgment call about baseline drift, noise levels, and series resistance — experienced analysts *know* when data looks wrong, but encoding that knowledge in code is nontrivial.
-
-The result? Biologists spend more time fighting Python than thinking about biology. They copy-paste scripts from lab mates (which may contain subtle bugs), use commercial tools (expensive and opaque), or just skip certain analyses entirely.
+So what actually happens? People spend more time fighting Python than thinking about biology. They copy-paste scripts from lab mates (which may contain subtle bugs), use commercial tools (expensive, opaque), or just skip certain analyses entirely. It's not great.
 
 ### Why Not Just Ask ChatGPT?
 
-The LLM revolution has given scientists a powerful new tool: they can describe an analysis in English and get Python code back. And for many tasks, this works well enough.
+Fair question. The LLM revolution has been legitimately helpful — you can describe what you want in English and get Python code back. For a lot of tasks, that works well enough.
 
-But for electrophysiology, generic AI assistants fall short in critical ways:
+But for electrophysiology specifically, I've found that generic AI assistants fall short in ways that really matter:
 
-| Problem | What Goes Wrong |
-|---|---|
-| **No domain guardrails** | An LLM will happily use `scipy.signal.find_peaks()` on a voltage trace to "detect spikes." This is *scientifically wrong* — it misses subthreshold events and catches artefacts. Proper spike detection uses dV/dt threshold criteria. |
-| **Hallucinated analysis** | Asked to analyze a file it can't actually read, a generic LLM may generate plausible-looking but completely fabricated numbers. |
-| **No data access** | Chat-based LLMs can't load your ABF file, run your analysis, and return real results. They can only generate code for you to run yourself. |
-| **No quality control** | A generic assistant won't warn you that your recording's input resistance is drifting, or that the baseline is too noisy for reliable spike detection. |
-| **No reproducibility** | Every conversation starts from scratch. There's no standardized workflow, no saved parameters, no audit trail. |
+- **No domain guardrails.** An LLM will happily use `scipy.signal.find_peaks()` on a voltage trace to "detect spikes." This is scientifically wrong — it misses subthreshold events and catches artefacts. Proper spike detection uses dV/dt threshold criteria.
+- **Hallucinated analysis.** Ask it to analyze a file it can't actually read, and it'll generate plausible-looking but completely fabricated numbers. I've seen this happen more times than I'd like.
+- **No data access.** Chat-based LLMs can't load your ABF file, run your analysis, and return real results. They can only generate code for *you* to run.
+- **No quality control.** A generic assistant won't warn you that your recording's input resistance is drifting, or that the baseline is too noisy for reliable spike detection.
+- **No reproducibility.** Every conversation starts from scratch. No standardized workflow, no saved parameters, no audit trail.
 
-What biologists need isn't a literature-review chatbot or a general-purpose code generator. They need a **specialized coding agent** — one that:
+What researchers actually need isn't a literature-review chatbot or a general-purpose code generator — it's a specialized coding agent that loads and analyzes their actual data, uses validated methods, and refuses to cut corners.
 
-- Actually loads and analyzes their data files
-- Uses validated, peer-reviewed analysis methods
-- Refuses to cut corners or fabricate results
-- Speaks the language of electrophysiology
+## So... PatchAgent
 
-## The Solution: patchAgent
+patchAgent is basically that. It's a conversational AI agent purpose-built for patch-clamp electrophysiology. Under the hood, it wraps well-tested analysis libraries (pyABF, IPFX, NumPy, SciPy) behind a natural-language interface, with scientific guardrails baked in at multiple levels.
 
-**patchAgent** is a conversational AI agent purpose-built for patch-clamp electrophysiology. It wraps battle-tested analysis libraries behind a natural-language interface, with scientific guardrails baked in at every layer.
-
-### What It Is
-
-At its core, patchAgent is a [GitHub Copilot SDK](https://github.com/github/copilot-sdk) agent with 20 specialized tools spanning six categories:
-
-| Category | Examples | What They Do |
-|---|---|---|
-| **I/O** | `load_file`, `list_sweeps` | Load ABF/NWB files, inspect sweep metadata |
-| **Spike analysis** | `detect_spikes`, `extract_spike_features` | AP detection via IPFX (dV/dt-based), per-spike and train-level metrics |
-| **Passive properties** | `calculate_input_resistance`, `calculate_time_constant` | Rm, τ, sag, resting Vm from subthreshold sweeps |
-| **Quality control** | `run_sweep_qc`, `check_baseline_stability` | Baseline drift, noise, clipping detection |
-| **Curve fitting** | `fit_iv_curve`, `fit_fi_curve` | Linear/polynomial IV, linear/sqrt f-I |
-| **Code execution** | `execute_code`, `validate_code` | Sandboxed Python with rigor enforcement |
-
-
-### How It Works (30-Second Version)
+It's built on the [GitHub Copilot SDK](https://github.com/github/copilot-sdk) and has about 20 specialized tools spanning I/O, spike analysis, passive properties, QC, curve fitting, and sandboxed code execution. Think of it like this:
 
 ```
 You:     "Load cell_001.abf and measure the input resistance"
@@ -74,56 +48,25 @@ Agent:   1. Calls load_file → reads the ABF, returns 20 sweeps at 20 kHz
          5. Flags if the value is outside expected physiological range
 ```
 
-You ask in plain English. The agent translates that into the right sequence of tool calls, executes them against your actual data, and reports results with appropriate units, uncertainty, and quality flags.
+You ask a question in plain English. The agent figures out which tools to call, runs them against your actual data, and gives you results with appropriate units, uncertainty, and quality flags. No copying code into a notebook and debugging import errors.
 
-## Built-In Guard Rails
+## Guard Rails (the important part)
 
-This is where patchAgent differs most from a generic AI assistant. We don't just *hope* the LLM does the right thing — we enforce it structurally at multiple layers. Here's a preview (we'll go deeper in a [dedicated post](04-guardrails.md)):
+This is honestly where patchAgent differs most from a generic AI assistant. Rather than just *hoping* the LLM does the right thing, we actually enforce it structurally. I go into a lot more detail in a [dedicated post](04-guardrails.md), but the highlights:
 
-### 🔒 No Fake Data — Ever
+**No fake data, ever.** The code sandbox scans every snippet before execution. Patterns like `np.random.rand()`, `fake`, `dummy`, or `synthetic` get blocked outright — the code simply won't run. This isn't a prompt instruction the model can choose to ignore; it's a regex-based hard gate in the execution pipeline.
 
-The agent's code sandbox scans every snippet before execution. Patterns like `np.random.rand()`, `fake`, `dummy`, or `synthetic` are **blocked outright** — the code won't run. This isn't a prompt instruction the model can ignore; it's a regex-based hard gate in the execution pipeline.
+**The right tools first.** The system prompt encodes a strict priority: built-in validated tools first, then IPFX (Allen Institute's library), then custom code only as a last resort. The agent is explicitly forbidden from reimplementing spike detection with `find_peaks` or hand-rolling feature extraction when a validated tool already exists.
 
-### 🔒 The Right Tools First
+**Physiological sanity checks.** Every measurement gets checked against hard-coded physiological bounds. Input resistance of 50,000 MΩ? Resting potential of +20 mV? The agent flags it before you build a paper on bogus numbers.
 
-The system prompt encodes a strict priority order:
+**Input validation.** Before any analysis runs, the data itself gets checked: NaN values, Inf values, zero variance, suspiciously smooth traces (which might be synthetic). Problems get flagged before they can silently corrupt results.
 
-1. **Built-in tools** — validated, peer-reviewed implementations
-2. **IPFX** (Allen Institute) — battle-tested electrophysiology library  
-3. **Custom code** — only as a last resort, and even then it's scanned
+## Who is this for?
 
-The agent is explicitly forbidden from reimplementing spike detection with `find_peaks`, writing custom dV/dt threshold code, or hand-rolling feature extraction when a validated tool already exists.
+I built this with a pretty specific person in mind: a grad student or postdoc who runs patch-clamp experiments, knows enough Python to install packages and run scripts, but doesn't want to spend weeks writing and debugging analysis code. You know what input resistance *is*. You know why spike half-width matters. You just need help turning that domain knowledge into working, validated code.
 
-### 🔒 Physiological Sanity Checks
+patchAgent is [MIT-licensed](https://github.com/smestern/patchAgent) and fully open source. The tools can be used standalone (without the agent framework) as a regular Python library, and the whole thing is extensible via [MCP](https://modelcontextprotocol.io/) for IDE integration.
 
-Every measurement is checked against hard-coded physiological bounds. An input resistance of 50,000 MΩ? A resting potential of +20 mV? The agent flags it — loudly — before you build a paper on bogus numbers.
-
-### 🔒 Validated Inputs
-
-Before any analysis runs, the agent validates your data: NaN values, Inf values, zero variance, suspiciously smooth traces (possible synthetic data). Problems are reported before they can silently corrupt results.
-
-## Who This Is For
-
-patchAgent was built with a specific user in mind:
-
-> A graduate student or postdoc who runs patch-clamp experiments, has basic Python familiarity (can install packages and run scripts), but doesn't want to spend weeks writing and debugging analysis code.
-
-You know what input resistance *is*. You know why spike half-width matters. You just need help turning that domain knowledge into working, validated analysis — and patchAgent is that help.
-
-## Open Source
-
-patchAgent is [MIT-licensed](https://github.com/smestern/patchAgent) and fully open source. The tools can be used standalone (without the agent framework) as a regular Python library, and the agent is extensible via the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for IDE integration.
-
----
-
-## Key Takeaways
-
-- Electrophysiologists have domain expertise but often limited coding experience — generic AI assistants don't fill this gap safely.
-- patchAgent is a **specialized coding agent** that loads real data, runs validated analysis, and enforces scientific rigor.
-- Guard rails are structural — not just prompt instructions — preventing fake data, wrong methods, and implausible results.
-- It's open source, extensible, and built for the bench scientist who knows *what* to measure but needs help writing the code.
-
----
-
-*See: [What is Patch-Clamp Electrophysiology?](01-what-is-patch-clamp.md)*  
+*See: [What is Patch-Clamp Electrophysiology?](02-what-is-patch-clamp.md)*  
 *Next: [A Walkthrough: Analyzing a Cell with patchAgent →](03-example-walkthrough.ipynb)*
