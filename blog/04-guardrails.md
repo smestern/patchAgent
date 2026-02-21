@@ -1,7 +1,5 @@
 # Guardrails: Keeping AI Honest in Science
 
-*How patchAgent prevents an LLM from fabricating data, using wrong methods, or reporting implausible results.*
-
 ## Why This Matters More Than You Think
 
 When an AI helps you write a marketing email and hallucinates something, it's embarrassing. When an AI helps you analyze scientific data and hallucinates something, you might build a paper on fabricated numbers, waste months on follow-up experiments, or — in translational work — mislead drug development.

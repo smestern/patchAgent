@@ -11,6 +11,7 @@ from typing import Optional, List
 
 from sciagent import BaseScientificAgent
 from sciagent.config import AgentConfig
+from sciagent.agents import get_agent_config, list_agent_configs
 
 from patchagent.config import PATCH_CONFIG
 from patchagent.constants import DEFAULT_MODEL

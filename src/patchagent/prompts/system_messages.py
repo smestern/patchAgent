@@ -268,6 +268,21 @@ def build_patch_system_message(extra_sections: list[str] | None = None) -> str:
 # Sub-agent system messages (domain-specific, no duplication)
 # ====================================================================
 
+def load_subagent_system_messages() -> dict[str, str]:
+    """Load system messages for specialized sub-agents."""
+    return {
+        "qc_checker": QC_CHECKER_SYSTEM_MESSAGE,
+        "spike_analyst": SPIKE_ANALYST_SYSTEM_MESSAGE,
+        "passive_analyst": PASSIVE_ANALYST_SYSTEM_MESSAGE,
+    }
+
+def load_subagent_from_files() -> dict[str, str]:
+    """Load sub-agent system messages from external files (optional)."""
+    # Example implementation — in this case we hardcode the messages above,
+    # but this could be extended to read from .txt or .md files in a directory.
+    return load_subagent_system_messages()
+
+
 QC_CHECKER_SYSTEM_MESSAGE = """\
 You are a quality control specialist for patch-clamp recordings.
 

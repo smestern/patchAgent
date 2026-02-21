@@ -4,18 +4,12 @@
 
 More and more life science researchers ()
 
-## Why VS Code?
-
-More and more coding isIf you've been doing analysis in Jupyter notebooks launched from Anaconda Navigator, or copy-pasting scripts into Spyder.You may spend a lot off time 
-
-It works, up to a point. But once your projects get more complex (multiple files, version control, virtual environments, actual package structure), a proper editor starts to matter. 
-
-[VS Code](https://code.visualstudio.com/) is free, open-source, and it's what most people writing scientific Python end up using. It handles notebooks, terminal sessions, Git, and extensions all in one window. And it runs GitHub Copilot natively — so the AI assistant is right there in your editor, not in a separate browser tab.
-
 ## Contents
 
-- [Setting Up VS Code \& Copilot for Life Science Research](#setting-up-vs-code--copilot-for-life-science-research)
+- [Setting Up VS Code \& Copilot (and/or Claude code) for Life Science Research](#setting-up-vs-code--copilot-andor-claude-code-for-life-science-research)
+  - [What is this?](#what-is-this)
   - [Contents](#contents)
+  - [Vs Code](#vs-code)
   - [Why VS Code?](#why-vs-code)
   - [Step 0: Install Python (if you haven't already)](#step-0-install-python-if-you-havent-already)
   - [Step 1: Install VS Code](#step-1-install-vs-code)
@@ -31,6 +25,16 @@ It works, up to a point. But once your projects get more complex (multiple files
   - [Step 6: Quality-of-Life Extras](#step-6-quality-of-life-extras)
   - [Common Gotchas](#common-gotchas)
   - [What Next?](#what-next)
+
+## Vs Code
+
+## Why VS Code?
+
+More and more coding isIf you've been doing analysis in Jupyter notebooks launched from Anaconda Navigator, or copy-pasting scripts into Spyder.You may spend a lot off time 
+
+It works, up to a point. But once your projects get more complex (multiple files, version control, virtual environments, actual package structure), a proper editor starts to matter. 
+
+[VS Code](https://code.visualstudio.com/) is free, open-source, and it's what most people writing scientific Python end up using. It handles notebooks, terminal sessions, Git, and extensions all in one window. And it runs GitHub Copilot natively — so the AI assistant is right there in your editor, not in a separate browser tab.
 
 ## Step 0: Install Python (if you haven't already)
 
@@ -76,7 +80,7 @@ This is the step that trips up most people. VS Code needs to know *which* Python
 
 If you're using conda, you'll see entries like `Python 3.10.x ('myenv': conda)`. Pick the one that has your analysis packages installed. If you don't see your environment, you may need to restart VS Code after creating it.
 
-**Pro tip:** If you create a virtual environment inside your project folder (e.g., `python -m venv .venv`), VS Code will auto-detect it next time you open that folder. This is nice for reproducibility — each project gets its own isolated packages.
+**Pro tip:** If you create a virtual environment inside your project folder (e.g., `python -m venv .venv`), VS Code will auto-detect it next time you open that folder. This is nice for reproducibility, as each project gets its own isolated packages.
 
 ## Step 4: Set Up GitHub Copilot
 
