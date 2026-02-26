@@ -1,44 +1,52 @@
-# Setting Up VS Code & Copilot (and/or Claude code) for Life Science Research
+*# Setting Up VS Code & Copilot (and/or Claude code) for Life Science Research
 
 ## What is this?
 
-More and more life science researchers ()
+This guide was written for colleagues in my lab to help them setup VS Code and use the native AI coding tools to beef up their scientific code. 
+
+More and more life science researchers are expected to know some basic coding / scripting in order conduct their research. This is especially true, as high impact papers in life sciences are expected to be multifaceted and include several integrated techniques. 
+Most individuals entering grad school now have a decent understanding of basic scripting, setting up python/matlab/R, and running rudimentary analysis. However, things get iffy when they are expected to write Software engineer-level reproducible code, or debug packages & setups (getting CUDA working anywhere is a living nightmare, if AI ever figures this out it means we achieved AGI).
+
+I have been pretty AI skeptic, but I have been fiddling with the new flagship models (GPT-Codex-5.3, Claude Opus 4.5/4.6, and Gemini 3). I think AI-for-science can really impact current grad students by helping them write rigorous reproducible scientific code. I am thinking specific in a human-in-the-loop manner, in a way that grad students can describe the analysis they want to do, and write and debug code with AI assistance. 
+
+There are a couple of caveats to this, but I'll cover that below.
 
 ## Contents
 
-- [Setting Up VS Code \& Copilot (and/or Claude code) for Life Science Research](#setting-up-vs-code--copilot-andor-claude-code-for-life-science-research)
-  - [What is this?](#what-is-this)
-  - [Contents](#contents)
-  - [Vs Code](#vs-code)
-  - [Why VS Code?](#why-vs-code)
-  - [Step 0: Install Python (if you haven't already)](#step-0-install-python-if-you-havent-already)
-  - [Step 1: Install VS Code](#step-1-install-vs-code)
-  - [Step 2: Install the Python Extension](#step-2-install-the-python-extension)
-  - [Step 3: Set Up Your Python Environment](#step-3-set-up-your-python-environment)
-  - [Step 4: Set Up GitHub Copilot](#step-4-set-up-github-copilot)
-    - [Get Access](#get-access)
-    - [Install the Extension](#install-the-extension)
-  - [Step 5: Actually Using It](#step-5-actually-using-it)
-    - [Inline Completions (Ghost Text)](#inline-completions-ghost-text)
-    - [Copilot Chat (Ask Mode)](#copilot-chat-ask-mode)
-    - [Agent Mode](#agent-mode)
-  - [Step 6: Quality-of-Life Extras](#step-6-quality-of-life-extras)
-  - [Common Gotchas](#common-gotchas)
-  - [What Next?](#what-next)
+- [What is this?](#what-is-this)
+- [Contents](#contents)
+- [Vs Code](#vs-code)
+- [Why VS Code?](#why-vs-code)
+- [Step 0: Install Python (if you haven't already)](#step-0-install-python-if-you-havent-already)
+- [Step 1: Install VS Code](#step-1-install-vs-code)
+- [Step 2: Install the Python Extension](#step-2-install-the-python-extension)
+- [Step 3: Set Up Your Python Environment](#step-3-set-up-your-python-environment)
+- [Step 4: Set Up GitHub Copilot](#step-4-set-up-github-copilot)
+  - [Get Access](#get-access)
+  - [Install the Extension](#install-the-extension)
+- [Step 5: Actually Using It](#step-5-actually-using-it)
+  - [Inline Completions (Ghost Text)](#inline-completions-ghost-text)
+  - [Copilot Chat (Ask Mode)](#copilot-chat-ask-mode)
+  - [Agent Mode](#agent-mode)
+- [Step 6: Quality-of-Life Extras](#step-6-quality-of-life-extras)
+- [Common Gotchas](#common-gotchas)
+- [What Next?](#what-next)
 
 ## Vs Code
 
 ## Why VS Code?
 
-More and more coding isIf you've been doing analysis in Jupyter notebooks launched from Anaconda Navigator, or copy-pasting scripts into Spyder.You may spend a lot off time 
+[VS Code](https://code.visualstudio.com/) is a free and open-source integrated development enviroment (IDE). Essentially the it is a comprehensive software that can help organize, run and debug all sorts different types of code. VS Code is just one of several IDEs (you may have tried Spyder, also an IDE), but its widely adopted these days due to its price, performance, and general flexibility. Even if you don't intend to use AI-features, I do recommend using an IDE (VS Code or Spyder) for general help with syntax highlighting, debugging, and inline function definitions.
 
-It works, up to a point. But once your projects get more complex (multiple files, version control, virtual environments, actual package structure), a proper editor starts to matter. 
+![alt text](image-1.png)
+*Image; the main interface of VS Code; Left, the primary file interface - You can organize files into folders and subfolders!; Middle, The file editor/canvas, this is where your code will be, as you can see I am writing this in VS Code!; Right, The AI-chat interface for inline editing.*
 
-[VS Code](https://code.visualstudio.com/) is free, open-source, and it's what most people writing scientific Python end up using. It handles notebooks, terminal sessions, Git, and extensions all in one window. And it runs GitHub Copilot natively — so the AI assistant is right there in your editor, not in a separate browser tab.
+If
+
 
 ## Step 0: Install Python (if you haven't already)
 
-You probably already have Python via Anaconda or Miniconda. That's fine — VS Code will find it. If you're starting fresh, I'd recommend [Miniconda](https://docs.anaconda.com/miniconda/) over full Anaconda. It's lighter and you won't end up with 400 packages you never use.
+You probably already have Python via Anaconda or Miniconda. VS Code will find it. If you're starting fresh, I'd recommend [Miniconda](https://docs.anaconda.com/miniconda/) over full Anaconda. It's lighter and you won't end up with 400 packages you never use.
 
 Make sure Python is on your system PATH. You can check by opening a terminal (Command Prompt on Windows, Terminal on Mac) and typing:
 
@@ -55,7 +63,7 @@ Download it from [code.visualstudio.com](https://code.visualstudio.com/). Run th
 - **"Add to PATH"** — lets you open VS Code from the terminal by typing `code .` in any folder
 - **"Register as default editor"** — optional, but convenient
 
-Once it's installed, open it. You'll see an empty window with a welcome tab. Close the welcome tab (you won't need it again).
+Once it's installed, open it. You'll see an empty window with a welcome tab.
 
 ## Step 2: Install the Python Extension
 
@@ -78,7 +86,7 @@ This is the step that trips up most people. VS Code needs to know *which* Python
 3. Type **"Python: Select Interpreter"** and hit Enter
 4. Pick your environment from the list
 
-If you're using conda, you'll see entries like `Python 3.10.x ('myenv': conda)`. Pick the one that has your analysis packages installed. If you don't see your environment, you may need to restart VS Code after creating it.
+If you're using conda, you'll see entries like `Python 3.X.X ('myenv': conda)`. Pick the one that has your analysis packages installed. If you don't see your environment, you may need to restart VS Code after creating it.
 
 **Pro tip:** If you create a virtual environment inside your project folder (e.g., `python -m venv .venv`), VS Code will auto-detect it next time you open that folder. This is nice for reproducibility, as each project gets its own isolated packages.
 
@@ -169,3 +177,4 @@ At this point you've got a working setup: VS Code, Python, and Copilot. From her
 - Set up Git for version control (that's a whole separate post, but [the VS Code docs](https://code.visualstudio.com/docs/sourcecontrol/intro-to-git) are genuinely good)
 
 The gap between "I know what analysis I want to run" and "I have working code that does it" is a lot smaller than it used to be. The tooling still has rough edges, but it's at the point where you can get pretty far with just basic Python and a willingness to poke around.
+*
