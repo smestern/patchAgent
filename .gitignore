@@ -13,4 +13,5 @@ src/patch_agent.egg-info/
 # Generated output
 output/
 *.png
+!blog/*.png
 *.csv

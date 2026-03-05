@@ -84,6 +84,7 @@ As noted above, the vision is for scientists to leverage the agents to generate 
 
 The analysis script looks great! I am happy with the general output and configurable options:
 
+<details>
 ```
 #!/usr/bin/env python3
 """
@@ -288,3 +289,4 @@ def find_abf_files(input_dir: str) -> Dict[str, List[str]]:
 
 ....
 ```
+</details>
