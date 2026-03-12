@@ -54,9 +54,17 @@ The results are pretty good...
 The first pass analysis works quite well. The agent has correctly identified the stimulus period to use, correctly selected some files to exclude, and correctly plotted all the F-I curves.
 The agent correctly reasons that the +condition dampens the overall firing rate of the neurons, whereas the +condition+rescue restores the firing rate to that of the control
 
+### Part 1.5: Hitting a Rigour Check
+
+Now here it gets interesting. While the model was trying to complete part one, it tried to use a specific anti-pattern we have told the rigour checker to look out for. Specifically, the agent tried to use `scipy.signal.find_peaks` to detect action potentials. This is a **big no no** and contrary to the established protocol of using a dv/dt method (e.g. used by the Allen inst. in ipfx; see [Gouwens et al. 2019](https://www.nature.com/articles/s41593-019-0417-0), [2020](https://pubmed.ncbi.nlm.nih.gov/33186530/)).
+
+![flag](rigour_flag.webp)
+
+Luckily, our code scanning tools found in [src\patchagent\tools\code_tools.py](src\patchagent\tools\code_tools.py) caught this, and informed the LLM. Then the LLM was able to readjust its strategy. An advantage of having a domain specific rigor checker, and domain specific anti-patterns.
+
 ### Part 2: Asking for a Nuanced Analysis
 
-Next, we ask the model for something more specific. Here we are asking about membrane capacitance. Neuronal membranes act as capacitors and can build and store charge. The actual overall capacity of the neuron can be seen as a proxy measure for neuronal size (since more membrane = more place to store charge), although the actual picture is [a lot more complex than](https://pubmed.ncbi.nlm.nih.gov/19571202/) that, but it's beyond the scope of this post)  
+Next, we ask the model for something more specific. Here we are asking about membrane capacitance. Neuronal membranes act as capacitors and can build and store charge. The actual overall capacity of the neuron can be seen as a proxy measure for neuronal size (since more membrane = more place to store charge), although the actual picture is [a lot more complex than](https://pubmed.ncbi.nlm.nih.gov/19571202/) that, but it's beyond the scope of this post.
 Neuroscientists will often describe neurons in a simplified manner as RC circuits. 
 ![alt text](image.png)
 In this way, we can compute the membrane capacitance as a function of time constant and resistance:  
