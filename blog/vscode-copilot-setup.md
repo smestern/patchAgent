@@ -15,7 +15,6 @@ There are a couple of caveats to this, but I'll cover that below.
 
 - [What is this?](#what-is-this)
 - [Contents](#contents)
-- [Vs Code](#vs-code)
 - [Why VS Code?](#why-vs-code)
 - [Step 0: Install Python (if you haven't already)](#step-0-install-python-if-you-havent-already)
 - [Step 1: Install VS Code](#step-1-install-vs-code)
@@ -24,15 +23,14 @@ There are a couple of caveats to this, but I'll cover that below.
 - [Step 4: Set Up GitHub Copilot](#step-4-set-up-github-copilot)
   - [Get Access](#get-access)
   - [Install the Extension](#install-the-extension)
-- [Step 5: Actually Using It](#step-5-actually-using-it)
+- [Step 6: Adding Some rigour](#step-6-adding-some-rigour)
+- [Step 7: Actually Using It](#step-7-actually-using-it)
   - [Inline Completions (Ghost Text)](#inline-completions-ghost-text)
   - [Copilot Chat (Ask Mode)](#copilot-chat-ask-mode)
   - [Agent Mode](#agent-mode)
-- [Step 6: Quality-of-Life Extras](#step-6-quality-of-life-extras)
+- [Step 8: Quality-of-Life Extras](#step-8-quality-of-life-extras)
 - [Common Gotchas](#common-gotchas)
 - [What Next?](#what-next)
-
-## Vs Code
 
 ## Why VS Code?
 
@@ -41,11 +39,11 @@ There are a couple of caveats to this, but I'll cover that below.
 ![alt text](image-1.png)
 *Image; the main interface of VS Code; Left, the primary file interface - You can organize files into folders and subfolders!; Middle, The file editor/canvas, this is where your code will be, as you can see I am writing this in VS Code!; Right, The AI-chat interface for inline editing.*
 
-If
+If you are used to copy and pasting between scripts and ChatGPT (or your AI web app of choice), this has the immediate advantage of having hooks for LLMs/AI right into the software. This means the AI can see things like the scripts, your python environment and your computer set-up; thus allowing the AI to better build & debug scripts with the contextual understanding of the overall system you are working with (unlike the web-apps, which have no context unless you explicitly tell it).
 
 
 ## Step 0: Install Python (if you haven't already)
-
+ 
 You probably already have Python via Anaconda or Miniconda. VS Code will find it. If you're starting fresh, I'd recommend [Miniconda](https://docs.anaconda.com/miniconda/) over full Anaconda. It's lighter and you won't end up with 400 packages you never use.
 
 Make sure Python is on your system PATH. You can check by opening a terminal (Command Prompt on Windows, Terminal on Mac) and typing:
@@ -99,7 +97,7 @@ This is the part you're probably here for. [GitHub Copilot](https://github.com/f
 You need a GitHub account and a Copilot subscription. A few options:
 
 - **Free tier** — GitHub offers a free tier of Copilot with limited completions per month. For most researchers, this is probably enough to start with.
-- **Pro ($10/month)** — Unlimited completions, the chat features, and access to different models (Claude, GPT-4o, etc.)
+- **Pro ($10/month)** — Budgeted completions, the chat features, and access to different models (Claude, GPT-4o, etc.)
 - **Free for students/academics** — If you have a `.edu` email, you can get Copilot Pro for free through [GitHub Education](https://education.github.com/). Seriously, do this if you can.
 
 ### Install the Extension
@@ -111,7 +109,11 @@ You need a GitHub account and a Copilot subscription. A few options:
 
 Once signed in, you should see a small Copilot icon in the bottom status bar of VS Code. If it's there, you're connected.
 
-## Step 5: Actually Using It
+## Step 6: Adding Some rigour
+
+
+
+## Step 7: Actually Using It
 
 Copilot works in three modes. Each is useful for different things.
 
@@ -146,7 +148,7 @@ For research, this is the most useful one. You can say something like "load all 
 
 Fair warning though: it can and will hallucinate function calls or make up data if you're not paying attention. Always review the code it writes. This is one of the reasons I built [patchAgent](https://github.com/smestern/patchAgent) with explicit guardrails — but even without that, Copilot in Agent mode is pretty useful for exploratory analysis, as long as you keep an eye on it.
 
-## Step 6: Quality-of-Life Extras
+## Step 8: Quality-of-Life Extras
 
 A few more extensions worth installing once you're set up:
 
